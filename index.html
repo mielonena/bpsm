@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <title>BPSM</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Yksinkertaiset tyylit kirjautumislomakkeelle */
+        #login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f6f7;
+            font-family: Arial, sans-serif;
+        }
+        #login-form {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 300px;
+        }
+        #login-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #login-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        #login-btn:hover {
+            background-color: #2980b9;
+        }
+        #logout-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: auto;
+        }
+        #logout-btn:hover {
+            background-color: #c0392b;
+        }
+        #login-error {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        /* TÄMÄ LUOKKA PIILOTTAA NAPIT PERUSKÄYTTÄJÄLTÄ */
+        .admin-vain {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+
+<div id="login-container">
+    <div id="login-form">
+        <h2 style="color: #2c3e50; margin-top: 0;">BPSM Kirjautuminen</h2>
+        <input type="email" id="login-email" placeholder="Sähköpostiosoite" required>
+        <input type="password" id="login-password" placeholder="Salasana" required>
+        <button id="login-btn" onclick="suoritaKirjautuminen()">Kirjaudu sisään</button>
+        <p id="login-error"></p>
+    </div>
+</div>
+
+<div id="app-content" style="display: none;">
+    <div class="ohjauspaneeli" style="display: flex; flex-wrap: wrap; align-items: center; gap: 5px;">
+        <button id="btnKaikki" class="taso-nappi aktiivinen" onclick="vaihdaTaso('kaikki')">Koko kone</button>
+        <button id="btnYla" class="taso-nappi" onclick="vaihdaTaso('yla')">Yläkone</button>
+        <button id="btnAla" class="taso-nappi" onclick="vaihdaTaso('ala')">Alakone</button>
+        <button id="btnLista" class="taso-nappi" onclick="vaihdaTaso('lista')">Kaikki positiot</button>
+        <button id="btnPeruskunnostetut" class="taso-nappi" onclick="vaihdaPeruskunnostusNakyma()">Peruskunnostetut</button>
+        
+        <select id="pk-vuosi-asetus" onchange="paivitaPeruskunnostetutKartalle()" style="display: none; padding: 10px 10px; border-radius: 50px; border: 2px solid #2ecc71; font-weight: bold; color: #2c3e50; background-color: #fdfefe; margin-right: 10px; outline: none; cursor: pointer; transition: all 0.3s;">
+            <option value="Kaikki">Kaikki vuodet</option>
+            <option value="2019" selected>Alkaen 2019</option>
+            <option value="2020">Alkaen 2020</option>
+            <option value="2021">Alkaen 2021</option>
+            <option value="2022">Alkaen 2022</option>
+            <option value="2023">Alkaen 2023</option>
+            <option value="2024">Alkaen 2024</option>
+            <option value="2025">Alkaen 2025</option>
+            <option value="2026">Alkaen 2026</option>
+        </select>
+        <select id="peruskunnostusFiltteri" onchange="paivitaPeruskunnostetutKartalle()" style="display: none; padding: 10px 10px; border-radius: 50px; border: 2px solid #2ecc71; font-weight: bold; color: #2c3e50; background-color: #fdfefe; margin-right: 10px; outline: none; cursor: pointer; transition: all 0.3s;">
+            <option value="Kaikki">Kaikki</option>
+            <option value="BC">BC</option>
+            <option value="BV">BV</option>
+            <option value="SM">SM</option>
+        </select>
+    
+        <button id="btnKokoHistoria" class="taso-nappi" onclick="vaihdaTaso('historia')">Koko historia</button>
+        <button id="btnViat" class="taso-nappi" onclick="vaihdaTaso('viat')">Aktiiviset viat</button>
+        <button id="btnVaraosat" class="taso-nappi" onclick="vaihdaTaso('varaosat')">⚙️ Varaosat</button>
+        <button class="taso-nappi" style="border-color: white; color: green;" onclick="lataaExcel(true)">📥 Vie</button>
+        
+        <button class="taso-nappi admin-vain" style="border-color: white; color: red;" onclick="document.getElementById('csvTuonti').click()">📤 Tuo </button>
+    
+        <input type="file" id="varaosatTuonti" accept=".xlsx, .xls" onchange="tuoVaraosatExcel(event)" style="display: none;">
+        <button class="admin-vain" onclick="document.getElementById('varaosatTuonti').click()" style="padding: 8px 16px; background-color: #8e44ad; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-left: 10px;">
+            📦 Tuo Varaosat (Excel)
+        </button>
+        <input type="file" id="csvTuonti" accept=".csv" style="display: none;" onchange="tuoCSVHistoria(event)">
+        <button class="admin-vain" onclick="tyhjennaKokoMuisti()" style="padding: 8px 16px; background-color: #c0392b; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-left: 10px;">
+            🗑️ Tyhjennä koko muisti
+        </button>
+
+        <button id="logout-btn" onclick="suoritaUloskirjautuminen()">Kirjaudu ulos</button>
+    </div>
+
+    <div id="lista-alue" class="lista-nakyma-container"></div>
+    <div id="viat-alue" class="lista-nakyma-container" style="background-color: #fcf3f2; border-color: #e74c3c;"></div>
+    <div id="historia-alue" class="lista-nakyma-container" style="background-color: #f4f6f7; border-color: #8e44ad;"></div>
+    <div id="varaosat-alue" style="display: none; padding: 20px;"></div>
+    
+    <div class="kartta-alue">
+        <svg width="100%" height="100%" viewBox="-300 -200 1850 1600" style="position: absolute; top: 0; left: 0; overflow: hidden;">
+            <defs>
+                <pattern id="pieniRuudukko" width="50" height="50" patternUnits="userSpaceOnUse">
+                    <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#bdc3c7" stroke-width="0.5"/>
+                </pattern>
+                <pattern id="isoRuudukko" width="250" height="250" patternUnits="userSpaceOnUse">
+                    <rect width="250" height="250" fill="url(#pieniRuudukko)"/>
+                    <path d="M 250 0 L 0 0 0 250" fill="none" stroke="#7f8c8d" stroke-width="2"/>
+                </pattern>
+            </defs>
+
+            <rect id="apuRuudukko" width="1850" height="1600" x="-250" y="-200" fill="url(#isoRuudukko)" pointer-events="none" style="display: none;" />
+            
+            <g id="tie">
+                <line x1="480" y1="-250" x2="480" y2="1250" class="tie" style="stroke: #e0e0e0; stroke-width: 90;" data-nimi="tie"/>
+                <text x="480" y="280" fill="#95a5a6" font-weight="bold" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" style="writing-mode: vertical-rl; text-orientation: upright;" pointer-events="none">TRUKKIVÄYLÄ</text>
+            </g>
+            
+            <g id="suorat">
+                <text x="450" y="1080" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">A1</text>
+                 <text x="510" y="1080" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">A2</text>
+                 <text x="450" y="1030" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">B1</text>
+                 <text x="510" y="1030" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">B2</text>
+                 <text x="450" y="730" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">C1</text>
+                 <text x="450" y="680" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">D1</text>
+                 <text x="450" y="480" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">E1</text>
+                 <text x="510" y="480" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">E2</text>
+                 <text x="450" y="430" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">F1</text>
+                 <text x="510" y="430" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">F2</text>
+                 <text x="450" y="130" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">G1</text>
+                 <text x="450" y="80" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">H1</text>
+                 <text x="510" y="-100" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">H2</text>
+          </g>
+                
+            <g id="kl1-yhteinen">
+                <line x1="1421" y1="-87.5" x2="1470" y2="-87.5" class="rata-osa kl1-osa" style="stroke-width: 45;" data-nimi="KAATOLAITE 1" onclick="avaaTiedot('KAATOLAITE 1')" />
+                <line x1="1356" y1="-87.5" x2="1420" y2="-87.5" class="rata-osa kl1-osa" style="stroke-width: 45;" data-nimi="SO01.BC102" onclick="avaaTiedot('SO01.BC102')" />
+                <text x="1430" y="-82" text-anchor="right" font-weight="bold" fill="#333" pointer-events="none">KL1</text>
+            </g>
+            
+            <g id="ruudukkoNumerot" pointer-events="none" style="display: none;"></g>
+
+            <g id="Luisut"></g>
+            <g id="linja-700-sarja"></g>
+            <g id="linja-750-sarja"></g>
+            <g id="linja-630-sarja"></g>
+            <g id="linja-680-sarja"></g>
+
+            <g id="luisu-971">
+                 <line x1="550" y1="50" x2="550" y2="-40" class="rata-osa luisu" style="stroke-width: 20;" data-nimi="SO01.BC972" onclick="avaaTiedot('SO01.BC972')" />
+                <line x1="575" y1="100" x2="575" y2="50" class="rata-osa luisu" style="stroke-width: 20;" data-nimi="971" onclick="avaaTiedot('971')" />
+                <line x1="550" y1="100" x2="550" y2="50" class="rata-osa luisu" style="stroke-width: 20;" data-nimi="971" onclick="avaaTiedot('971')" />
+                <line x1="540" y1="-50" x2="565" y2="-50" class="rata-osa luisu" style="stroke-width: 20;" data-nimi="973" onclick="avaaTiedot('973')" />
+                <line x1="575" y1="-35" x2="575" y2="-170" class="rata-osa luisu" style="stroke-width: 20;" data-nimi="SO02.BC973" onclick="avaaTiedot('SO02.BC973')" />
+                <line x1="575" y1="50" x2="575" y2="-35" class="rata-osa luisu" style="stroke-width: 20;" data-nimi="SO02.BC972" onclick="avaaTiedot('SO02.BC972')" />
+                <circle cx="585" cy="-170" r="10" class="rata-osa luisu" data-nimi="974" onclick="avaaTiedot('974')" />
+            </g>
+
+            <g id="nakyma-yla" style="display: block;">
+                <g id="vetoasema-11"><line x1="400" y1="470" x2="430" y2="470" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO01.SM011" onclick="avaaTiedot('SO01.SM011')" /></g>
+                <g id="vetoasema-12"><line x1="-160" y1="470" x2="-130" y2="470" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO01.SM012" onclick="avaaTiedot('SO01.SM012')" /></g>
+                <g id="vetoasema-13"><line x1="470" y1="80" x2="500" y2="80" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO01.SM013" onclick="avaaTiedot('SO01.SM013')" /></g>
+                <g id="vetoasema-14"><line x1="1000" y1="80" x2="1030" y2="80" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO01.SM014" onclick="avaaTiedot('SO01.SM014')" /></g>
+                <g id="vetoasema-15"><line x1="1320" y1="920" x2="1320" y2="950" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO01.SM015" onclick="avaaTiedot('SO01.SM015')" /></g>
+                <g id="vetoasema-16"><line x1="-160" y1="1070" x2="-130" y2="1070" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO01.SM016" onclick="avaaTiedot('SO01.SM016')" /></g>
+                <g id="vetoasema-17"><line x1="400" y1="680" x2="430" y2="680" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO01.SM017" onclick="avaaTiedot('SO01.SM017')" /></g>
+                
+                <g id="kl3-yhteinen">
+                    <line x1="1421" y1="252.5" x2="1470" y2="252.5" class="rata-osa kl3-osa" style="stroke-width: 45;" data-nimi="KAATOLAITE 3" onclick="avaaTiedot('KAATOLAITE 3')" />
+                    <line x1="1356" y1="252.5" x2="1420" y2="252.5" class="rata-osa kl3-osa" style="stroke-width: 45;" data-nimi="SO01.BC152" onclick="avaaTiedot('SO01.BC152')" />
+                    <text x="1445" y="257.5" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">KL3</text>
+                </g>
+                <g id="kl5-yhteinen">
+                    <line x1="1421" y1="548.5" x2="1470" y2="548.5" class="rata-osa kl5-osa" style="stroke-width: 43;" data-nimi="RULLAKKOKAATOLAITE 5" onclick="avaaTiedot('RULLAKKOKAATOLAITE 5')" />
+                    <line x1="1356" y1="537" x2="1420" y2="537" class="rata-osa kl5-osa" style="stroke-width: 20;" data-nimi="Vihreä hihna(oikea)" onclick="avaaTiedot('Vihreä hihna oikea(RKL5)')" />
+                   <line x1="1356" y1="560" x2="1420" y2="560" class="rata-osa kl5-osa" style="stroke-width: 20;" data-nimi="Vihreä hihna(vasen)" onclick="avaaTiedot('Vihreä hihna vasen(RKL5)')" />
+                    <text x="1445" y="553.5" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">RKL5</text>
+                </g>
+                <g id="kl6-yhteinen">
+                    <line x1="1421" y1="852.5" x2="1470" y2="852.5" class="rata-osa kl6-osa" style="stroke-width: 45;" data-nimi="KAATOLAITE 6" onclick="avaaTiedot('KAATOLAITE 6')" />
+                    <line x1="1356" y1="852.5" x2="1420" y2="852.5" class="rata-osa kl6-osa" style="stroke-width: 45;" data-nimi="SO01.BC352" onclick="avaaTiedot('SO01.BC352')" />
+                    <text x="1445" y="857.5" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">KL6</text>
+                </g>
+                
+                <g id="kl1-yla">
+                    <line x1="1355" y1="-100" x2="1280" y2="-100" class="rata-osa kl1-osa" data-nimi="SO01.BC112" onclick="avaaTiedot('KL1 - SO01.BC112')" />
+                    <line x1="1280" y1="-100" x2="1230" y2="-100" class="rata-osa kl1-osa" data-nimi="SO01.BC113" onclick="avaaTiedot('KL1 - SO01.BC113')" />
+                    <line x1="1230" y1="-100" x2="1180" y2="-100" class="rata-osa kl1-osa" data-nimi="SO01.BC114" onclick="avaaTiedot('KL1 - SO01.BC114')" />
+                    <line x1="1180" y1="-100" x2="1130" y2="-100" class="rata-osa kl1-osa" data-nimi="SO01.BC115" onclick="avaaTiedot('KL1 - SO01.BC115')" />
+                    <line x1="1130" y1="-100" x2="1000" y2="-100" class="rata-osa kl1-osa" data-nimi="SO01.BC116" onclick="avaaTiedot('KL1 - SO01.BC116')" />
+                    <line x1="1000" y1="-100" x2="765" y2="-100" class="rata-osa kl1-osa" data-nimi="SO01.BC117" onclick="avaaTiedot('KL1 - SO01.BC117')" />
+                    <path d="M 765 -100 A 30 30 0 0 0 735 -70" class="rata-osa kl1-osa" data-nimi="SO01.BV118" onclick="avaaTiedot('KL1 - SO01.BV118')" />
+                    <line x1="735" y1="-70" x2="735" y2="0" class="rata-osa kl1-osa" data-nimi="SO01.BC119" onclick="avaaTiedot('KL1 - SO01.BC119')" />
+                    <path d="M 735 0 A 30 30 0 0 0 750 26" class="rata-osa kl1-osa" data-nimi="SO01.BV120" onclick="avaaTiedot('KL1 - SO01.BV120')" />
+                    <line x1="750" y1="26" x2="776" y2="41" class="rata-osa kl1-osa" data-nimi="SO01.ID125.M1" onclick="avaaTiedot('KL1 - SO01.ID125.M1')" />
+                    <line x1="776" y1="41" x2="802" y2="56" class="rata-osa kl1-osa" data-nimi="SO01.ID125.M2" onclick="avaaTiedot('KL1 - SO01.ID125.M2')" />
+                    <line x1="802" y1="56" x2="828" y2="71" class="rata-osa kl1-osa" data-nimi="SO01.ID125.M3" onclick="avaaTiedot('KL1 - SO01.ID125.M3')" />
+                    <line x1="828" y1="71" x2="854" y2="86" class="rata-osa kl1-osa" data-nimi="SO01.ID125.M4" onclick="avaaTiedot('KL1 - SO01.ID125.M4')" />
+                    <line x1="854" y1="86" x2="880" y2="101" class="rata-osa kl1-osa" data-nimi="SO01.ID125.M5" onclick="avaaTiedot('KL1 - SO01.ID125.M5')" />
+                    <text x="1335" y="-115" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">101</text>
+                </g>
+
+                <g id="kl3-yla">
+                    <line x1="1355" y1="240" x2="1280" y2="240" class="rata-osa kl3-osa" data-nimi="SO01.BC162" onclick="avaaTiedot('KL3 - SO01.BC162')" />
+                    <line x1="1280" y1="240" x2="1230" y2="240" class="rata-osa kl3-osa" data-nimi="SO01.BC163" onclick="avaaTiedot('KL3 - SO01.BC163')" />
+                    <line x1="1230" y1="240" x2="1180" y2="240" class="rata-osa kl3-osa" data-nimi="SO01.BC164" onclick="avaaTiedot('KL3 - SO01.BC164')" />
+                    <line x1="1180" y1="240" x2="1130" y2="240" class="rata-osa kl3-osa" data-nimi="SO01.BC165" onclick="avaaTiedot('KL3 - SO01.BC165')" />
+                    <line x1="1130" y1="240" x2="980" y2="240" class="rata-osa kl3-osa" data-nimi="SO01.BC166" onclick="avaaTiedot('KL3 - SO01.BC166')" />
+                    <line x1="980" y1="240" x2="689.5" y2="240" class="rata-osa kl3-osa" data-nimi="SO01.BC167" onclick="avaaTiedot('KL3 - SO01.BC167')" />
+                    <path d="M 690 240 A 30 30 0 0 1 660 210" class="rata-osa kl3-osa" data-nimi="SO01.BV168" onclick="avaaTiedot('KL3 - SO01.BV168')" />
+                    <path d="M 660 210 A 30 30 0 0 1 675 184" class="rata-osa kl3-osa" data-nimi="SO01.BV169" onclick="avaaTiedot('KL3 - SO01.BV169')" />
+                    <line x1="675" y1="184" x2="703.86" y2="167.4" class="rata-osa kl3-osa" data-nimi="SO01.ID175.M1" onclick="avaaTiedot('KL3 - SO01.ID175.M1')" />
+                    <line x1="703.86" y1="167.4" x2="732.73" y2="150.8" class="rata-osa kl3-osa" data-nimi="SO01.ID175.M2" onclick="avaaTiedot('KL3 - SO01.ID175.M2')" />
+                    <line x1="732.73" y1="150.8" x2="761.59" y2="134.2" class="rata-osa kl3-osa" data-nimi="SO01.ID175.M3" onclick="avaaTiedot('KL3 - SO01.ID175.M3')" />
+                    <line x1="761.59" y1="134.2" x2="790.46" y2="117.6" class="rata-osa kl3-osa" data-nimi="SO01.ID175.M4" onclick="avaaTiedot('KL3 - SO01.ID175.M4')" />
+                    <line x1="790.46" y1="117.6" x2="819.32" y2="101.0" class="rata-osa kl3-osa" data-nimi="SO01.ID175.M5" onclick="avaaTiedot('KL3 - SO01.ID175.M5')" />
+                    <text x="1335" y="225" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">102</text>
+                </g>
+
+                <g id="kl3-ala">
+                    <line x1="1280" y1="265" x2="1355" y2="265" class="rata-osa kl3-osa" data-nimi="SO01.BC212" onclick="avaaTiedot('KL3 - SO01.BC212')" />
+                    <line x1="1230" y1="265" x2="1280" y2="265" class="rata-osa kl3-osa" data-nimi="SO01.BC213" onclick="avaaTiedot('KL3 - SO01.BC213')" />
+                    <line x1="1180" y1="265" x2="1230" y2="265" class="rata-osa kl3-osa" data-nimi="SO01.BC214" onclick="avaaTiedot('KL3 - SO01.BC214')" />
+                    <line x1="1130" y1="265" x2="1180" y2="265" class="rata-osa kl3-osa" data-nimi="SO01.BC215" onclick="avaaTiedot('KL3 - SO01.BC215')" />
+                    <line x1="1030" y1="265" x2="1130" y2="265" class="rata-osa kl3-osa" data-nimi="SO01.BC216" onclick="avaaTiedot('KL3 - SO01.BC216')" />
+                    <line x1="640" y1="265" x2="1030" y2="265" class="rata-osa kl3-osa" data-nimi="SO01.BC217" onclick="avaaTiedot('KL3 - SO01.BC217')" />
+                    <path d="M 640 265 A 30 30 0 0 1 610 235" class="rata-osa kl3-osa" data-nimi="SO01.BV218" onclick="avaaTiedot('KL3 - SO01.BV218')" />
+                    <line x1="610" y1="235" x2="610" y2="210" class="rata-osa kl3-osa" data-nimi="SO01.BC219" onclick="avaaTiedot('KL3 - SO01.BC219')" />
+                    <path d="M 610 210 A 30 30 0 0 1 625 184" class="rata-osa kl3-osa" data-nimi="SO01.BV220" onclick="avaaTiedot('KL3 - SO01.BV220')" />
+                    <line x1="625" y1="184" x2="653.86" y2="167.4" class="rata-osa kl3-osa" data-nimi="SO01.ID225.M1" onclick="avaaTiedot('KL3 - SO01.ID225.M1')" />
+                    <line x1="653.86" y1="167.4" x2="682.73" y2="150.8" class="rata-osa kl3-osa" data-nimi="SO01.ID225.M2" onclick="avaaTiedot('SO01.ID225.M2')" />
+                    <line x1="682.73" y1="150.8" x2="711.59" y2="134.2" class="rata-osa kl3-osa" data-nimi="SO01.ID225.M3" onclick="avaaTiedot('KL3 - SO01.ID225.M3')" />
+                    <line x1="711.59" y1="134.2" x2="740.46" y2="117.6" class="rata-osa kl3-osa" data-nimi="SO01.ID225.M4" onclick="avaaTiedot('KL3 - SO01.ID225.M4')" />
+                    <line x1="740.46" y1="117.6" x2="769.32" y2="101.0" class="rata-osa kl3-osa" data-nimi="SO01.ID225.M5" onclick="avaaTiedot('KL3 - SO01.ID225.M5')" />
+                    <text x="1335" y="290" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">103</text>
+                </g>
+
+                <g id="kl5-yla">
+                    <line x1="1280" y1="560" x2="1355" y2="560" class="rata-osa kl5-osa" data-nimi="SO01.BC312" onclick="avaaTiedot('KL5 - SO01.BC312')" />
+                    <line x1="1230" y1="560" x2="1280" y2="560" class="rata-osa kl5-osa" data-nimi="SO01.BC313" onclick="avaaTiedot('KL5 - SO01.BC313')" />
+                    <line x1="1180" y1="560" x2="1230" y2="560" class="rata-osa kl5-osa" data-nimi="SO01.BC314" onclick="avaaTiedot('KL5 - SO01.BC314')" />
+                    <line x1="1130" y1="560" x2="1180" y2="560" class="rata-osa kl5-osa" data-nimi="SO01.BC315" onclick="avaaTiedot('KL5 - SO01.BC315')" />
+                    <line x1="1080" y1="560" x2="1130" y2="560" class="rata-osa kl5-osa" data-nimi="SO01.BC316" onclick="avaaTiedot('KL5 - SO01.BC316')" />
+                    <line x1="689.5" y1="560" x2="1080" y2="560" class="rata-osa kl5-osa" data-nimi="SO01.BC317" onclick="avaaTiedot('KL5 - SO01.BC317')" />
+                    <path d="M 690 560 A 30 30 0 0 0 660 590" class="rata-osa kl5-osa" data-nimi="SO01.BV318" onclick="avaaTiedot('KL5 - SO01.BV318')" />
+                    <path d="M 660 590 A 30 30 0 0 0 675 616" class="rata-osa kl5-osa" data-nimi="SO01.BV319" onclick="avaaTiedot('KL5 - SO01.BV319')" />
+                    <line x1="675" y1="616" x2="703.86" y2="633" class="rata-osa kl5-osa" data-nimi="SO01.ID325.M1" onclick="avaaTiedot('KL5 - SO01.ID325.M1')" />
+                    <line x1="703.86" y1="633" x2="732.73" y2="650" class="rata-osa kl5-osa" data-nimi="SO01.ID325.M2" onclick="avaaTiedot('KL5 - SO01.ID325.M2')" />
+                    <line x1="732.73" y1="650" x2="761.59" y2="667" class="rata-osa kl5-osa" data-nimi="SO01.ID325.M3" onclick="avaaTiedot('KL5 - SO01.ID325.M3')" />
+                    <line x1="761.59" y1="667" x2="790.46" y2="684" class="rata-osa kl5-osa" data-nimi="SO01.ID325.M4" onclick="avaaTiedot('KL5 - SO01.ID325.M4')" />
+                    <line x1="790.46" y1="684" x2="819.32" y2="701" class="rata-osa kl5-osa" data-nimi="SO01.ID325.M5" onclick="avaaTiedot('KL5 - SO01.ID325.M5')" />
+                    <text x="1335" y="523" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">104</text>
+                </g>
+
+                <g id="kl5-ala">
+                    <line x1="1280" y1="537" x2="1355" y2="537" class="rata-osa kl5-osa" data-nimi="SO01.BC262" onclick="avaaTiedot('KL5 - SO01.BC262')" />
+                    <line x1="1230" y1="537" x2="1280" y2="537" class="rata-osa kl5-osa" data-nimi="SO01.BC263" onclick="avaaTiedot('KL5 - SO01.BC263')" />
+                    <line x1="1180" y1="537" x2="1230" y2="537" class="rata-osa kl5-osa" data-nimi="SO01.BC264" onclick="avaaTiedot('KL5 - SO01.BC264')" />
+                    <line x1="1130" y1="537" x2="1180" y2="537" class="rata-osa kl5-osa" data-nimi="SO01.BC265" onclick="avaaTiedot('KL5 - SO01.BC265')" />
+                    <line x1="1080" y1="537" x2="1130" y2="537" class="rata-osa kl5-osa" data-nimi="SO01.BC266" onclick="avaaTiedot('KL5 - SO01.BC266')" />
+                    <line x1="640" y1="537" x2="1080" y2="537" class="rata-osa kl5-osa" data-nimi="SO01.BC267" onclick="avaaTiedot('KL5 - SO01.BC267')" />
+                    <path d="M 640 537 A 30 30 0 0 0 610 567" class="rata-osa kl5-osa" data-nimi="SO01.BV268" onclick="avaaTiedot('KL5 - SO01.BV268')" />
+                    <line x1="610" y1="567" x2="610" y2="592" class="rata-osa kl5-osa" data-nimi="SO01.BC269" onclick="avaaTiedot('KL5 - SO01.BC269')" />
+                    <path d="M 610 592 A 30 30 0 0 0 625 618" class="rata-osa kl5-osa" data-nimi="SO01.BV270" onclick="avaaTiedot('KL5 - SO01.BV270')" />
+                    <line x1="625" y1="618" x2="653.86" y2="634.6" class="rata-osa kl5-osa" data-nimi="SO01.ID275.M1" onclick="avaaTiedot('KL5 - SO01.ID275.M1')" />
+                    <line x1="653.86" y1="634.6" x2="682.73" y2="651.2" class="rata-osa kl5-osa" data-nimi="SO01.ID275.M2" onclick="avaaTiedot('KL5 - SO01.ID275.M2')" />
+                    <line x1="682.73" y1="651.2" x2="711.59" y2="667.8" class="rata-osa kl5-osa" data-nimi="SO01.ID275.M3" onclick="avaaTiedot('KL5 - SO01.ID275.M3')" />
+                    <line x1="711.59" y1="667.8" x2="740.46" y2="684.4" class="rata-osa kl5-osa" data-nimi="SO01.ID275.M4" onclick="avaaTiedot('KL5 - SO01.ID275.M4')" />
+                    <line x1="740.46" y1="684.4" x2="769.32" y2="701.0" class="rata-osa kl5-osa" data-nimi="SO01.ID275.M5" onclick="avaaTiedot('KL5 - SO01.ID275.M5')" />
+                    <text x="1335" y="585" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">105</text>
+                </g>
+
+                <g id="kl6-yla">
+                    <line x1="1280" y1="840" x2="1355" y2="840" class="rata-osa kl6-osa" data-nimi="SO01.BC362" onclick="avaaTiedot('KL6 - SO01.BC362')" />
+                    <line x1="1230" y1="840" x2="1280" y2="840" class="rata-osa kl6-osa" data-nimi="SO01.BC363" onclick="avaaTiedot('KL6 - SO01.BC363')" />
+                    <line x1="1180" y1="840" x2="1230" y2="840" class="rata-osa kl6-osa" data-nimi="SO01.BC364" onclick="avaaTiedot('KL6 - SO01.BC364')" />
+                    <line x1="1130" y1="840" x2="1180" y2="840" class="rata-osa kl6-osa" data-nimi="SO01.BC365" onclick="avaaTiedot('KL6 - SO01.BC365')" />
+                    <line x1="1080" y1="840" x2="1130" y2="840" class="rata-osa kl6-osa" data-nimi="SO01.BC366" onclick="avaaTiedot('KL6 - SO01.BC366')" />
+                    <line x1="689.5" y1="840" x2="1080" y2="840" class="rata-osa kl6-osa" data-nimi="SO01.BC367" onclick="avaaTiedot('KL6 - SO01.BC367')" />
+                    <path d="M 690 840 A 30 30 0 0 1 660 810" class="rata-osa kl6-osa" data-nimi="SO01.BV368" onclick="avaaTiedot('KL6 - SO01.BV368')" />
+                    <path d="M 660 810 A 30 30 0 0 1 675 784" class="rata-osa kl6-osa" data-nimi="SO01.BV369" onclick="avaaTiedot('KL6 - SO01.BV369')" />
+                    <line x1="675" y1="784" x2="703.86" y2="767.4" class="rata-osa kl6-osa" data-nimi="SO01.ID375.M1" onclick="avaaTiedot('KL6 - SO01.ID375.M1')" />
+                    <line x1="703.86" y1="767.4" x2="732.73" y2="750.8" class="rata-osa kl6-osa" data-nimi="SO01.ID375.M2" onclick="avaaTiedot('KL6 - SO01.ID375.M2')" />
+                    <line x1="732.73" y1="750.8" x2="761.59" y2="734.2" class="rata-osa kl6-osa" data-nimi="SO01.ID375.M3" onclick="avaaTiedot('KL6 - SO01.ID375.M3')" />
+                    <line x1="761.59" y1="734.2" x2="790.46" y2="717.6" class="rata-osa kl6-osa" data-nimi="SO01.ID375.M4" onclick="avaaTiedot('KL6 - SO01.ID375.M4')" />
+                    <line x1="790.46" y1="717.6" x2="819.32" y2="701.0" class="rata-osa kl6-osa" data-nimi="SO01.ID375.M5" onclick="avaaTiedot('KL6 - SO01.ID375.M5')" />
+                    <text x="1335" y="825" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">106</text>
+                </g>
+
+                <g id="kl6-ala">
+                    <line x1="1280" y1="865" x2="1355" y2="865" class="rata-osa kl6-osa" data-nimi="SO01.BC412" onclick="avaaTiedot('KL6 - SO01.BC412')" />
+                    <line x1="1230" y1="865" x2="1280" y2="865" class="rata-osa kl6-osa" data-nimi="SO01.BC413" onclick="avaaTiedot('KL6 - SO01.BC413')" />
+                    <line x1="1180" y1="865" x2="1230" y2="865" class="rata-osa kl6-osa" data-nimi="SO01.BC414" onclick="avaaTiedot('KL6 - SO01.BC414')" />
+                    <line x1="1130" y1="865" x2="1180" y2="865" class="rata-osa kl6-osa" data-nimi="SO01.BC415" onclick="avaaTiedot('KL6 - SO01.BC415')" />
+                    <line x1="1080" y1="865" x2="1130" y2="865" class="rata-osa kl6-osa" data-nimi="SO01.BC416" onclick="avaaTiedot('KL6 - SO01.BC416')" />
+                    <line x1="640" y1="865" x2="1080" y2="865" class="rata-osa kl6-osa" data-nimi="SO01.BC417" onclick="avaaTiedot('KL6 - SO01.BC417')" />
+                    <path d="M 640 865 A 30 30 0 0 1 610 835" class="rata-osa kl6-osa" data-nimi="SO01.BV418" onclick="avaaTiedot('KL6 - SO01.BV418')" />
+                    <line x1="610" y1="835" x2="610" y2="810" class="rata-osa kl6-osa" data-nimi="SO01.BC419" onclick="avaaTiedot('KL6 - SO01.BC419')" />
+                    <path d="M 610 810 A 30 30 0 0 1 625 784" class="rata-osa kl6-osa" data-nimi="SO01.BV420" onclick="avaaTiedot('KL6 - SO01.BV420')" />
+                    <line x1="625" y1="784" x2="653.86" y2="767.4" class="rata-osa kl6-osa" data-nimi="SO01.ID425.M1" onclick="avaaTiedot('KL6 - SO01.ID425.M1')" />
+                    <line x1="653.86" y1="767.4" x2="682.73" y2="750.8" class="rata-osa kl6-osa" data-nimi="SO01.ID425.M2" onclick="avaaTiedot('KL6 - SO01.ID425.M2')" />
+                    <line x1="682.73" y1="750.8" x2="711.59" y2="734.2" class="rata-osa kl6-osa" data-nimi="SO01.ID425.M3" onclick="avaaTiedot('KL6 - SO01.ID425.M3')" />
+                    <line x1="711.59" y1="734.2" x2="740.46" y2="717.6" class="rata-osa kl6-osa" data-nimi="SO01.ID425.M4" onclick="avaaTiedot('KL6 - SO01.ID425.M4')" />
+                    <line x1="740.46" y1="717.6" x2="769.32" y2="701.0" class="rata-osa kl6-osa" data-nimi="SO01.ID425.M5" onclick="avaaTiedot('KL6 - SO01.ID425.M5')" />
+                    <text x="1335" y="890" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">107</text>
+                </g>
+            </g>
+
+            <g id="nakyma-ala" style="display: none;">
+                <g id="vetoasema-ala11"><line x1="550" y1="470" x2="580" y2="470" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO02.SM011" onclick="avaaTiedot('SO02.SM011')" /></g>
+                <g id="vetoasema-ala12"><line x1="-160" y1="470" x2="-130" y2="470" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO02.SM012" onclick="avaaTiedot('SO02.SM012')" /></g>
+                <g id="vetoasema-ala13"><line x1="400" y1="80" x2="430" y2="80" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO02.SM013" onclick="avaaTiedot('SO02.SM013')" /></g>
+                <g id="vetoasema-ala14"><line x1="1000" y1="80" x2="1030" y2="80" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO02.SM014" onclick="avaaTiedot('SO02.SM014')" /></g>
+                <g id="vetoasema-ala15"><line x1="1250" y1="920" x2="1250" y2="950" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO02.SM015" onclick="avaaTiedot('SO02.SM015')" /></g>
+                <g id="vetoasema-ala16"><line x1="-160" y1="1070" x2="-130" y2="1070" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO02.SM016" onclick="avaaTiedot('SO02.SM016')" /></g>
+                <g id="vetoasema-ala17"><line x1="400" y1="680" x2="430" y2="680" class="rata-osa vetoasema-osa" style="stroke-width: 20;" data-nimi="Vetoasema SO02.SM017" onclick="avaaTiedot('SO02.SM017')" /></g>
+                
+                <g id="kl2-yhteinen-ala">
+                    <line x1="1421" y1="62.5" x2="1470" y2="62.5" class="rata-osa kl2-osa" style="stroke-width: 45;" data-nimi="KAATOLAITE 2" onclick="avaaTiedot('KAATOLAITE 2')" />
+                    <line x1="1356" y1="62.5" x2="1420" y2="62.5" class="rata-osa kl2-osa" style="stroke-width: 45;" data-nimi="SO02.BC152" onclick="avaaTiedot('SO02.BC152')" />
+                    <text x="1430" y="67" text-anchor="right" font-weight="bold" fill="#333" pointer-events="none">KL2</text>
+                </g>
+                <g id="kl4-yhteinen">
+                    <line x1="1421" y1="379" x2="1470" y2="379" class="rata-osa kl4-osa" style="stroke-width: 45;" data-nimi="RULLAKKOKAATOLAITE 4" onclick="avaaTiedot('KAATOLAITE 4')" />
+                                  <line x1="1356" y1="366.5" x2="1420" y2="366.5" class="rata-osa kl4-osa" style="stroke-width: 20;" data-nimi="Vihreä hihna(oikea)" onclick="avaaTiedot('Vihreä hihna oikea(RLK4)')" />
+                                  <line x1="1356" y1="391.5" x2="1420" y2="391.5" class="rata-osa kl4-osa" style="stroke-width: 20;" data-nimi="Vihreä hihna(vasen)" onclick="avaaTiedot('Vihreä hihna vasen(RKL4)')" />
+                    <text x="1445" y="384" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">RKL4</text>
+                </g>
+                <g id="kl7-yhteinen">
+                    <line x1="1421" y1="1007.5" x2="1470" y2="1007.5" class="rata-osa kl7-osa" style="stroke-width: 45;" data-nimi="KAATOLAITE 7" onclick="avaaTiedot('KAATOLAITE 7')" />
+                    <line x1="1356" y1="1007.5" x2="1420" y2="1007.5" class="rata-osa kl7-osa" style="stroke-width: 45;" data-nimi="SO02.BC352" onclick="avaaTiedot('SO02.BC352')" />
+                    <text x="1445" y="1012.5" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">KL7</text>
+                </g> 
+
+                <g id="kl1-ala-so02">
+                    <line x1="1355" y1="-75" x2="1280" y2="-75" class="rata-osa kl1-osa" data-nimi="SO02.BC112" onclick="avaaTiedot('KL1 - SO02.BC112')" />
+                    <line x1="1280" y1="-75" x2="1230" y2="-75" class="rata-osa kl1-osa" data-nimi="SO02.BC113" onclick="avaaTiedot('KL1 - SO02.BC113')" />
+                    <line x1="1230" y1="-75" x2="1180" y2="-75" class="rata-osa kl1-osa" data-nimi="SO02.BC114" onclick="avaaTiedot('KL1 - SO02.BC114')" />
+                    <line x1="1180" y1="-75" x2="1130" y2="-75" class="rata-osa kl1-osa" data-nimi="SO02.BC115" onclick="avaaTiedot('KL1 - SO02.BC115')" />
+                    <line x1="1130" y1="-75" x2="1000" y2="-75" class="rata-osa kl1-osa" data-nimi="SO02.BC116" onclick="avaaTiedot('KL1 - SO02.BC116')" />
+                    <line x1="1000" y1="-75" x2="765" y2="-75" class="rata-osa kl1-osa" data-nimi="SO02.BC117" onclick="avaaTiedot('KL1 - SO02.BC117')" />
+                    <path d="M 765 -75 A 30 30 0 0 0 735 -45" class="rata-osa kl1-osa" data-nimi="SO02.BV118" onclick="avaaTiedot('KL1 - SO02.BV118')" />
+                    <line x1="735" y1="-45" x2="735" y2="0" class="rata-osa kl1-osa" data-nimi="SO02.BC119" onclick="avaaTiedot('KL1 - SO02.BC119')" />
+                    <path d="M 735 0 A 30 30 0 0 0 750 26" class="rata-osa kl1-osa" data-nimi="SO02.BV120" onclick="avaaTiedot('KL1 - SO02.BV120')" />
+                    <line x1="750" y1="26" x2="776" y2="41" class="rata-osa kl1-osa" data-nimi="SO02.ID125.M1" onclick="avaaTiedot('KL1 - SO02.ID125.M1')" />
+                    <line x1="776" y1="41" x2="802" y2="56" class="rata-osa kl1-osa" data-nimi="SO02.ID125.M2" onclick="avaaTiedot('KL1 - SO02.ID125.M2')" />
+                    <line x1="802" y1="56" x2="828" y2="71" class="rata-osa kl1-osa" data-nimi="SO02.ID125.M3" onclick="avaaTiedot('KL1 - SO02.ID125.M3')" />
+                    <line x1="828" y1="71" x2="854" y2="86" class="rata-osa kl1-osa" data-nimi="SO02.ID125.M4" onclick="avaaTiedot('KL1 - SO02.ID125.M4')" />
+                    <line x1="854" y1="86" x2="880" y2="101" class="rata-osa kl1-osa" data-nimi="SO02.ID125.M5" onclick="avaaTiedot('KL1 - SO02.ID125.M5')" />
+                    <text x="1335" y="-50" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">201</text>
+                </g>
+
+                <g id="kl2-yla">
+                    <line x1="1300" y1="50" x2="1355" y2="50" class="rata-osa kl2-osa" data-nimi="SO02.BC162" onclick="avaaTiedot('KL2 - SO02.BC162')" />
+                    <line x1="1272.5" y1="50" x2="1300" y2="50" class="rata-osa kl2-osa" data-nimi="SO02.BC163" onclick="avaaTiedot('KL2 - SO02.BC163')" />
+                    <line x1="1245" y1="50" x2="1272.5" y2="50" class="rata-osa kl2-osa" data-nimi="SO02.BC164" onclick="avaaTiedot('KL2 - SO02.BC164')" />
+                    <line x1="1215" y1="50" x2="1245" y2="50" class="rata-osa kl2-osa" data-nimi="SO02.BC165" onclick="avaaTiedot('KL2 - SO02.BC165')" />
+                    <line x1="1191.5" y1="50" x2="1215" y2="50" class="rata-osa kl2-osa" data-nimi="SO02.BC166" onclick="avaaTiedot('KL2 - SO02.BC166')" />
+                    <path d="M 1192.5 50 A 60 60 0 0 0 1147.2 80.5" class="rata-osa kl2-osa" data-nimi="SO02.BV167" onclick="avaaTiedot('KL2 - SO02.BV167')" />
+                    <line x1="1147.5" y1="80.0" x2="1059.5" y2="210.8" class="rata-osa kl2-osa" data-nimi="SO02.BC168" onclick="avaaTiedot('KL2 - SO02.BC168')" />
+                    <path d="M 1060.2 210.0 A 60 60 0 0 1 1007.5 240" class="rata-osa kl2-osa" data-nimi="SO02.BV169" onclick="avaaTiedot('KL2 - SO02.BV169')" />
+                    <line x1="1008.5" y1="240" x2="689.5" y2="240" class="rata-osa kl2-osa" data-nimi="SO02.BC170" onclick="avaaTiedot('KL2 - SO02.BC170')" />
+                    <path d="M 690 240 A 30 30 0 0 1 660 210" class="rata-osa kl2-osa" data-nimi="SO02.BV171" onclick="avaaTiedot('KL2 - SO02.BV171')" />
+                    <path d="M 660 210 A 30 30 0 0 1 675 184" class="rata-osa kl2-osa" data-nimi="SO02.BV172" onclick="avaaTiedot('KL2 - SO02.BV172')" />
+                    <line x1="675" y1="184" x2="703.86" y2="167.4" class="rata-osa kl2-osa" data-nimi="SO02.ID175.M1" onclick="avaaTiedot('KL2 - SO02.ID175.M1')" />
+                    <line x1="703.86" y1="167.4" x2="732.73" y2="150.8" class="rata-osa kl2-osa" data-nimi="SO02.ID175.M2" onclick="avaaTiedot('KL2 - SO02.ID175.M2')" />
+                    <line x1="732.73" y1="150.8" x2="761.59" y2="134.2" class="rata-osa kl2-osa" data-nimi="SO02.ID175.M3" onclick="avaaTiedot('KL2 - SO02.ID175.M3')" />
+                    <line x1="761.59" y1="134.2" x2="790.46" y2="117.6" class="rata-osa kl2-osa" data-nimi="SO02.ID175.M4" onclick="avaaTiedot('KL2 - SO02.ID175.M4')" />
+                    <line x1="790.46" y1="117.6" x2="819.32" y2="101.0" class="rata-osa kl2-osa" data-nimi="SO02.ID175.M5" onclick="avaaTiedot('KL2 - SO02.ID175.M5')" />
+                    <text x="1335" y="35" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">202</text>
+                </g>
+
+                <g id="kl2-ala-203">
+                    <line x1="1325" y1="75" x2="1355" y2="75" class="rata-osa kl2-osa" data-nimi="SO02.BC212" onclick="avaaTiedot('KL2 - SO02.BC212')" />
+                    <line x1="1295" y1="75" x2="1325" y2="75" class="rata-osa kl2-osa" data-nimi="SO02.BC213" onclick="avaaTiedot('KL2 - SO02.BC213')" />
+                    <line x1="1265" y1="75" x2="1295" y2="75" class="rata-osa kl2-osa" data-nimi="SO02.BC214" onclick="avaaTiedot('KL2 - SO02.BC214')" />
+                    <line x1="1235" y1="75" x2="1265" y2="75" class="rata-osa kl2-osa" data-nimi="SO02.BC215" onclick="avaaTiedot('KL2 - SO02.BC215')" />
+                    <line x1="1216.5" y1="75" x2="1235" y2="75" class="rata-osa kl2-osa" data-nimi="SO02.BC216" onclick="avaaTiedot('KL2 - SO02.BC216')" />
+                    <path d="M 1217.5 75 A 60 60 0 0 0 1172.2 105.5" class="rata-osa kl2-osa" data-nimi="SO02.BV217" onclick="avaaTiedot('KL2 - SO02.BV217')" />
+                    <line x1="1172.5" y1="105.0" x2="1084.5" y2="235.8" class="rata-osa kl2-osa" data-nimi="SO02.BC218" onclick="avaaTiedot('KL2 - SO02.BC218')" />
+                    <path d="M 1085.2 235.0 A 60 60 0 0 1 1032.5 265" class="rata-osa kl2-osa" data-nimi="SO02.BV219" onclick="avaaTiedot('KL2 - SO02.BV219')" />
+                    <line x1="1033.5" y1="265" x2="640" y2="265" class="rata-osa kl2-osa" data-nimi="SO02.BC220" onclick="avaaTiedot('KL2 - SO02.BC220')" />
+                    <path d="M 640 265 A 30 30 0 0 1 610 235" class="rata-osa kl2-osa" data-nimi="SO02.BV221" onclick="avaaTiedot('KL2 - SO02.BV221')" />
+                    <line x1="610" y1="235" x2="610" y2="210" class="rata-osa kl2-osa" data-nimi="SO02.BC222" onclick="avaaTiedot('KL2 - SO02.BC222')" />
+                    <path d="M 610 210 A 30 30 0 0 1 625 184" class="rata-osa kl2-osa" data-nimi="SO02.BV223" onclick="avaaTiedot('KL2 - SO02.BV223')" />
+                    <line x1="625" y1="184" x2="653.86" y2="167.4" class="rata-osa kl2-osa" data-nimi="SO02.ID225.M1" onclick="avaaTiedot('KL2 - SO02.ID225.M1')" />
+                    <line x1="653.86" y1="167.4" x2="682.73" y2="150.8" class="rata-osa kl2-osa" data-nimi="SO02.ID225.M2" onclick="avaaTiedot('KL2 - SO02.ID225.M2')" />
+                    <line x1="682.73" y1="150.8" x2="711.59" y2="134.2" class="rata-osa kl2-osa" data-nimi="SO02.ID225.M3" onclick="avaaTiedot('KL2 - SO02.ID225.M3')" />
+                    <line x1="711.59" y1="134.2" x2="740.46" y2="117.6" class="rata-osa kl2-osa" data-nimi="SO02.ID225.M4" onclick="avaaTiedot('KL2 - SO02.ID225.M4')" />
+                    <line x1="740.46" y1="117.6" x2="769.32" y2="101.0" class="rata-osa kl2-osa" data-nimi="SO02.ID225.M5" onclick="avaaTiedot('KL2 - SO02.ID225.M5')" />
+                    <text x="1335" y="100" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">203</text>
+                </g>
+
+                <g id="kl4-yla">
+                    <line x1="1355.0" y1="391.5" x2="1260.0" y2="391.5" class="rata-osa kl4-osa" data-nimi="SO02.BC312" onclick="avaaTiedot('KL4 - SO02.BC312')" />
+                    <line x1="1260.0" y1="391.5" x2="1214.0" y2="391.5" class="rata-osa kl4-osa" data-nimi="SO02.BC313" onclick="avaaTiedot('KL4 - SO02.BC313')" />
+                    <path d="M 1214.0 391.5 A 60 60 0 0 0 1161.9 421.7" class="rata-osa kl4-osa" data-nimi="SO02.BV314" onclick="avaaTiedot('KL4 - SO02.BV314')" />
+                    <line x1="1161.9" y1="421.7" x2="1141.3" y2="457.8" class="rata-osa kl4-osa" data-nimi="SO02.BC315" onclick="avaaTiedot('KL4 - SO02.BC315')" />
+                    <line x1="1141.3" y1="457.8" x2="1120.6" y2="493.9" class="rata-osa kl4-osa" data-nimi="SO02.BC316" onclick="avaaTiedot('KL4 - SO02.BC316')" />
+                    <line x1="1120.6" y1="493.9" x2="1100.0" y2="530.0" class="rata-osa kl4-osa" data-nimi="SO02.BC317" onclick="avaaTiedot('KL4 - SO02.BC317')" />
+                    <path d="M 1100 530.0 A 60 60 0 0 1 1055 560" class="rata-osa kl4-osa" data-nimi="SO02.BV318" onclick="avaaTiedot('KL4 - SO02.BV318')" />
+                    <line x1="1060" y1="560" x2="690" y2="560" class="rata-osa kl4-osa" data-nimi="SO02.BC319" onclick="avaaTiedot('KL4 - SO02.BC319')" />
+                    <path d="M 690 560 A 30 30 0 0 0 660 590" class="rata-osa kl4-osa" data-nimi="SO02.BV320" onclick="avaaTiedot('KL4 - SO02.BV320')" />
+                    <path d="M 660 590 A 30 30 0 0 0 675 616" class="rata-osa kl4-osa" data-nimi="SO02.BV321" onclick="avaaTiedot('KL4 - SO02.BV321')" />
+                    <line x1="675" y1="616" x2="703.86" y2="633" class="rata-osa kl4-osa" data-nimi="SO02.ID325.M1" onclick="avaaTiedot('KL4 - SO02.ID325.M1')" />
+                    <line x1="703.86" y1="633" x2="732.73" y2="650" class="rata-osa kl4-osa" data-nimi="SO02.ID325.M2" onclick="avaaTiedot('KL4 - SO02.ID325.M2')"/>
+                    <line x1="732.73" y1="650" x2="761.59" y2="667" class="rata-osa kl4-osa" data-nimi="SO02.ID325.M3" onclick="avaaTiedot('KL4 - SO02.ID325.M3')" />
+                    <line x1="761.59" y1="667" x2="790.46" y2="684" class="rata-osa kl4-osa" data-nimi="SO02.ID325.M4" onclick="avaaTiedot('KL4 - SO02.ID325.M4')" />
+                    <line x1="790.46" y1="684" x2="819.32" y2="701" class="rata-osa kl4-osa" data-nimi="SO02.ID325.M5" onclick="avaaTiedot('KL4 - SO02.ID325.M5')" />
+                    <text x="1335" y="355" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">204</text>
+                </g>
+
+                <g id="kl4-ala-205">
+                    <line x1="1355" y1="366.5" x2="1260" y2="366.5" class="rata-osa kl4-osa" data-nimi="SO02.BC262" onclick="avaaTiedot('KL4 - SO02.BC262')" />
+                    <line x1="1260" y1="366.5" x2="1195" y2="366.5" class="rata-osa kl4-osa" data-nimi="SO02.BC263" onclick="avaaTiedot('KL4 - SO02.BC263')" />
+                    <path d="M 1195.4 366.5 A 60 60 0 0 0 1145.0 400.0" class="rata-osa kl4-osa" data-nimi="SO02.BV264" onclick="avaaTiedot('KL4 - SO02.BV264')" />
+                    <line x1="1145" y1="400" x2="1125" y2="435" class="rata-osa kl4-osa" data-nimi="SO02.BC265" onclick="avaaTiedot('KL4 - SO02.BC265')" />
+                    <line x1="1125" y1="435" x2="1105" y2="470" class="rata-osa kl4-osa" data-nimi="SO02.BC266" onclick="avaaTiedot('KL4 - SO02.BC266')" />
+                    <line x1="1105" y1="470" x2="1085" y2="505" class="rata-osa kl4-osa" data-nimi="SO02.BC267" onclick="avaaTiedot('KL4 - SO02.BC267')" />
+                    <path d="M 1085.2 505.0 A 60 60 0 0 1 1030 535" class="rata-osa kl4-osa" data-nimi="SO02.BV268" onclick="avaaTiedot('KL4 - SO02.BV268')" />
+                    <line x1="1030" y1="535" x2="640" y2="535" class="rata-osa kl4-osa" data-nimi="SO02.BC269" onclick="avaaTiedot('KL4 - SO02.BC269')" />
+                    <path d="M 640 535 A 30 30 0 0 0 610 565" class="rata-osa kl4-osa" data-nimi="SO02.BV270" onclick="avaaTiedot('KL4 - SO02.BV270')" />
+                    <line x1="610" y1="565" x2="610" y2="592" class="rata-osa kl4-osa" data-nimi="SO02.BC271" onclick="avaaTiedot('KL4 - SO02.BC271')" />
+                    <path d="M 610 592 A 30 30 0 0 0 625 618" class="rata-osa kl4-osa" data-nimi="SO02.BV272" onclick="avaaTiedot('KL4 - SO02.BV272')" />
+                    <line x1="625" y1="618" x2="653.86" y2="634.6" class="rata-osa kl4-osa" data-nimi="SO02.ID275.M1" onclick="avaaTiedot('KL4 - SO02.ID275.M1')" />
+                    <line x1="653.86" y1="634.6" x2="682.73" y2="651.2" class="rata-osa kl4-osa" data-nimi="SO02.ID275.M2" onclick="avaaTiedot('KL4 - SO02.ID275.M2')" />
+                    <line x1="682.73" y1="651.2" x2="711.59" y2="667.8" class="rata-osa kl4-osa" data-nimi="SO02.ID275.M3" onclick="avaaTiedot('KL4 - SO02.ID275.M3')" />
+                    <line x1="711.59" y1="667.8" x2="740.46" y2="684.4" class="rata-osa kl4-osa" data-nimi="SO02.ID275.M4" onclick="avaaTiedot('KL4 - SO02.ID275.M4')" />
+                    <line x1="740.46" y1="684.4" x2="769.32" y2="701.0" class="rata-osa kl4-osa" data-nimi="SO02.ID275.M5" onclick="avaaTiedot('KL4 - SO02.ID275.M5')" />
+                    <text x="1335" y="415" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">205</text>
+                </g>
+
+                <g id="kl7-yla">
+                    <line x1="1280" y1="995" x2="1355" y2="995" class="rata-osa kl7-osa" data-nimi="SO02.BC362" onclick="avaaTiedot('KL7 - SO02.BC362')" />
+                    <line x1="1188.8" y1="995" x2="1280" y2="995" class="rata-osa kl7-osa" data-nimi="SO02.BC363" onclick="avaaTiedot('KL7 - SO02.BC363')" />
+                    <path d="M 1188.8 995 A 60 60 0 0 1 1136.8 965" class="rata-osa kl7-osa" data-nimi="SO02.BV364" onclick="avaaTiedot('KL7 - SO02.BV364')" />
+                    <line x1="1136.8" y1="965.0" x2="1118.6" y2="933.3" class="rata-osa kl7-osa" data-nimi="SO02.BC365" onclick="avaaTiedot('KL7 - SO02.BC365')" />
+                    <line x1="1118.6" y1="933.3" x2="1100.3" y2="901.7" class="rata-osa kl7-osa" data-nimi="SO02.BC366" onclick="avaaTiedot('KL7 - SO02.BC366')" />
+                    <line x1="1100.3" y1="901.7" x2="1082.0" y2="870.0" class="rata-osa kl7-osa" data-nimi="SO02.BC367" onclick="avaaTiedot('KL7 - SO02.BC367')" />
+                    <path d="M 1082.0 870 A 60 60 0 0 0 1030 840" class="rata-osa kl7-osa" data-nimi="SO02.BV368" onclick="avaaTiedot('KL7 - SO02.BV368')" />
+                    <line x1="1030" y1="840" x2="859.75" y2="840" class="rata-osa kl7-osa" data-nimi="SO02.BC369" onclick="avaaTiedot('KL7 - SO02.BC369')" />
+                    <line x1="859.75" y1="840" x2="689.5" y2="840" class="rata-osa kl7-osa" data-nimi="SO02.BC370" onclick="avaaTiedot('KL7 - SO02.BC370')" />
+                    <path d="M 690 840 A 30 30 0 0 1 660 810" class="rata-osa kl7-osa" data-nimi="SO02.BV371" onclick="avaaTiedot('KL7 - SO02.BV371')" />
+                    <path d="M 660 810 A 30 30 0 0 1 675 784" class="rata-osa kl7-osa" data-nimi="SO02.BV372" onclick="avaaTiedot('KL7 - SO02.BV372')" />
+                    <line x1="675" y1="784" x2="703.86" y2="767.4" class="rata-osa kl7-osa" data-nimi="SO02.ID375.M1" onclick="avaaTiedot('KL7 - SO02.ID375.M1')" />
+                    <line x1="703.86" y1="767.4" x2="732.73" y2="750.8" class="rata-osa kl7-osa" data-nimi="SO02.ID375.M2" onclick="avaaTiedot('KL7 - SO02.ID375.M2')" />
+                    <line x1="732.73" y1="750.8" x2="761.59" y2="734.2" class="rata-osa kl7-osa" data-nimi="SO02.ID375.M3" onclick="avaaTiedot('KL7 - SO02.ID375.M3')" />
+                    <line x1="761.59" y1="734.2" x2="790.46" y2="717.6" class="rata-osa kl7-osa" data-nimi="SO02.ID375.M4" onclick="avaaTiedot('KL7 - SO02.ID375.M4')" />
+                    <line x1="790.46" y1="717.6" x2="819.32" y2="701.0" class="rata-osa kl7-osa" data-nimi="SO02.ID375.M5" onclick="avaaTiedot('KL7 - SO02.ID375.M5')" />
+                    <text x="1335" y="980" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">206</text>
+                </g>
+
+                <g id="kl7-ala-207">
+                    <line x1="1280" y1="1020" x2="1355" y2="1020" class="rata-osa kl7-osa" data-nimi="SO02.BC412" onclick="avaaTiedot('KL7 - SO02.BC412')" />
+                    <line x1="1158.8" y1="1020" x2="1280" y2="1020" class="rata-osa kl7-osa" data-nimi="SO02.BC413" onclick="avaaTiedot('KL7 - SO02.BC413')" />
+                    <path d="M 1158.8 1020 A 60 60 0 0 1 1106.8 990" class="rata-osa kl7-osa" data-nimi="SO02.BV414" onclick="avaaTiedot('KL7 - SO02.BV414')" />
+                    <line x1="1106.8" y1="990.0" x2="1088.53" y2="958.33" class="rata-osa kl7-osa" data-nimi="SO02.BC415" onclick="avaaTiedot('KL7 - SO02.BC415')" />
+                    <line x1="1088.53" y1="958.33" x2="1070.27" y2="926.67" class="rata-osa kl7-osa" data-nimi="SO02.BC416" onclick="avaaTiedot('KL7 - SO02.BC416')" />
+                    <line x1="1070.27" y1="926.67" x2="1052.0" y2="895.0" class="rata-osa kl7-osa" data-nimi="SO02.BC417" onclick="avaaTiedot('KL7 - SO02.BC417')" />
+                    <path d="M 1052.0 895 A 60 60 0 0 0 1000 865" class="rata-osa kl7-osa" data-nimi="SO02.BV418" onclick="avaaTiedot('KL7 - SO02.BV418')" />
+                    <line x1="1000" y1="865" x2="820" y2="865" class="rata-osa kl7-osa" data-nimi="SO02.BC419" onclick="avaaTiedot('KL7 - SO02.BC419')" />
+                    <line x1="820" y1="865" x2="640" y2="865" class="rata-osa kl7-osa" data-nimi="SO02.BC420" onclick="avaaTiedot('KL7 - SO02.BC420')" />
+                    <path d="M 640 865 A 30 30 0 0 1 610 835" class="rata-osa kl7-osa" data-nimi="SO02.BV421" onclick="avaaTiedot('KL7 - SO02.BV421')" />
+                    <line x1="610" y1="835" x2="610" y2="810" class="rata-osa kl7-osa" data-nimi="SO02.BC422" onclick="avaaTiedot('KL7 - SO02.BC422')" />
+                    <path d="M 610 810 A 30 30 0 0 1 625 784" class="rata-osa kl7-osa" data-nimi="SO02.BV423" onclick="avaaTiedot('KL7 - SO02.BV423')" />
+                    <line x1="625" y1="784" x2="653.86" y2="767.4" class="rata-osa kl7-osa" data-nimi="SO02.ID425.M1" onclick="avaaTiedot('KL7 - SO02.ID425.M1')" />
+                    <line x1="653.86" y1="767.4" x2="682.73" y2="750.8" class="rata-osa kl7-osa" data-nimi="SO02.ID425.M2" onclick="avaaTiedot('KL7 - SO02.ID425.M2')" />
+                    <line x1="682.73" y1="750.8" x2="711.59" y2="734.2" class="rata-osa kl7-osa" data-nimi="SO02.ID425.M3" onclick="avaaTiedot('KL7 - SO02.ID425.M3')" />
+                    <line x1="711.59" y1="734.2" x2="740.46" y2="717.6" class="rata-osa kl7-osa" data-nimi="SO02.ID425.M4" onclick="avaaTiedot('KL7 - SO02.ID425.M4')" />
+                    <line x1="740.46" y1="717.6" x2="769.32" y2="701.0" class="rata-osa kl7-osa" data-nimi="SO02.ID425.M5" onclick="avaaTiedot('KL7 - SO02.ID425.M5')" />
+                    <text x="1335" y="1045" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">207</text>
+                </g>
+            </g>
+
+            <g id="taso-ala">
+                <line x1="-160" y1="101" x2="1200" y2="101" class="rata-osa ala-osa" data-nimi="Alataso - Yläsuora ulko" onclick="avaaTiedot('Alataso - Yläsuora ulko')" />
+                <line x1="900" y1="451" x2="-160" y2="451" class="rata-osa ala-osa" data-nimi="Alataso - Yläsuora sisä" onclick="avaaTiedot('Alataso - Yläsuora sisä')" />
+                <line x1="-160" y1="701" x2="900" y2="701" class="rata-osa ala-osa" data-nimi="Alataso - Alasuora sisä" onclick="avaaTiedot('Alataso - Alasuora sisä')" />
+                <line x1="1200" y1="1051" x2="-160" y2="1051" class="rata-osa ala-osa" data-nimi="Alataso - Alasuora ulko" onclick="avaaTiedot('Alataso - Alasuora ulko')" />
+                <line x1="1230" y1="131" x2="1230" y2="1021" class="rata-osa ala-osa" data-nimi="Alataso - Oikea suora ulko" onclick="avaaTiedot('Alataso - Oikea suora ulko')" />
+                <line x1="-190" y1="1021" x2="-190" y2="731" class="rata-osa ala-osa" data-nimi="Alataso - Alavasen pystysuora" onclick="avaaTiedot('Alataso - Alavasen pystysuora')" />
+                <line x1="930" y1="671" x2="930" y2="481" class="rata-osa ala-osa" data-nimi="Alataso - Keskipystysuora" onclick="avaaTiedot('Alataso - Keskipystysuora')" />
+                <line x1="-190" y1="421" x2="-190" y2="131" class="rata-osa ala-osa" data-nimi="Alataso - Ylävasen pystysuora" onclick="avaaTiedot('Alataso - Ylävasen pystysuora')" />
+                <path d="M 1200 101 A 30 30 0 0 1 1230 131" class="rata-osa ala-osa" data-nimi="Kaarre 1 - 32301" onclick="avaaTiedot('Kaarre 1')" />
+                <path d="M 1230 1021 A 30 30 0 0 1 1200 1051" class="rata-osa ala-osa" data-nimi="Kaarre 2 - 32302" onclick="avaaTiedot('Alakone - Kaarre 2')" />
+                <path d="M -160 1051 A 30 30 0 0 1 -190 1021" class="rata-osa ala-osa" data-nimi="Kaarre 3 - 32303" onclick="avaaTiedot('Alakone - Kaarre 3')" />
+                <path d="M -190 131 A 30 30 0 0 1 -160 101" class="rata-osa ala-osa" data-nimi="Kaarre 8 - 32308" onclick="avaaTiedot('Alakone - Kaarre 8')" />
+                <path d="M -190 731 A 30 30 0 0 1 -160 701" class="rata-osa ala-osa" data-nimi="Kaarre 4 - 32304" onclick="avaaTiedot('Alakone - Kaarre 4')" />
+                <path d="M 900 701 A 30 30 0 0 0 930 671" class="rata-osa ala-osa" data-nimi="Kaarre 5 - 32305" onclick="avaaTiedot('Alakone - Kaarre 5')" />
+                <path d="M 930 481 A 30 30 0 0 0 900 451" class="rata-osa ala-osa" data-nimi="Kaarre 6 - 32306" onclick="avaaTiedot('Alakone - Kaarre 6')" />
+                <path d="M -160 451 A 30 30 0 0 1 -190 421" class="rata-osa ala-osa" data-nimi="Kaarre 7 - 32307" onclick="avaaTiedot('Alakone - Kaarre 7')" />
+                <text x="230" y="576" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">SO02 alakone</text>
+              
+              <line x1="1210" y1="330" x2="1210" y2="280" class="rata-osa ala-osa" data-nimi="KAMERATUNNELI 2" onclick="avaaTiedot('KAMERATUNNELI 2')" />
+                        <text x="1235" y="285" text-anchor="middle" font-weight="bold" font-size="10" fill="white" pointer-events="none" transform="rotate (90 1210 280)">Tunneli 2</text>
+              
+              <line x1="910" y1="600" x2="910" y2="650" class="rata-osa ala-osa" data-nimi="KAMERATUNNELI 4" onclick="avaaTiedot('KAMERATUNNELI 4')" />
+              <text x="915" y="625" text-anchor="middle" font-weight="bold" font-size="10" fill="white" pointer-events="none" transform="rotate (90 910 620)">Tunneli 4</text>
+            </g>
+            
+            <g id="taso-yla">
+                <line x1="-160" y1="101" x2="1270" y2="101" class="rata-osa yla-osa" data-nimi=" H1/G1" onclick="avaaTiedot('Ylätaso - H1/G1')" />
+                <line x1="1000" y1="451" x2="-160" y2="451" class="rata-osa yla-osa" data-nimi=" F1/E1" onclick="avaaTiedot('Ylätaso - F1/E1')" />
+                <line x1="-160" y1="701" x2="1000" y2="701" class="rata-osa yla-osa" data-nimi=" D1/C1" onclick="avaaTiedot('Ylätaso - D1/C1')" />
+                <line x1="1270" y1="1051" x2="-160" y2="1051" class="rata-osa yla-osa" data-nimi=" A1/B1" onclick="avaaTiedot('Ylätaso - A1/B1')" />
+                <line x1="1300" y1="131" x2="1300" y2="1021" class="rata-osa yla-osa" data-nimi=" Ylataso" onclick="avaaTiedot('Ylätaso - Oikea suora ulko')" />
+                <line x1="-190" y1="1021" x2="-190" y2="731" class="rata-osa yla-osa" data-nimi=" Ylataso" onclick="avaaTiedot('Ylätaso - Alavasen pystysuora')" />
+                <line x1="1030" y1="671" x2="1030" y2="481" class="rata-osa yla-osa" data-nimi=" Ylataso" onclick="avaaTiedot('Ylätaso - Keskipystysuora')" />
+                <line x1="-190" y1="421" x2="-190" y2="131" class="rata-osa yla-osa" data-nimi=" Ylataso" onclick="avaaTiedot('Ylätaso - Ylävasen pystysuora')" />
+                <path d="M 1270 101 A 30 30 0 0 1 1300 131" class="rata-osa yla-osa" data-nimi="Kaarre 1 - 31301" onclick="avaaTiedot('Yläkone - Kaarre 1')" />
+                <path d="M 1300 1021 A 30 30 0 0 1 1270 1051" class="rata-osa yla-osa" data-nimi="Kaarre 2 - 31302" onclick="avaaTiedot('Yläkone - Kaarre 2')" />
+                <path d="M -160 1051 A 30 30 0 0 1 -190 1021" class="rata-osa yla-osa" data-nimi="Kaarre 3 - 31303" onclick="avaaTiedot('Yläkone - Kaarre 3')" />
+                <path d="M -190 131 A 30 30 0 0 1 -160 101" class="rata-osa yla-osa" data-nimi="Kaarre 8 - 31308" onclick="avaaTiedot('Yläkone - Kaarre 8')" />
+                <path d="M -190 731 A 30 30 0 0 1 -160 701" class="rata-osa yla-osa" data-nimi="Kaarre 4 - 31304" onclick="avaaTiedot('Yläkone - Kaarre 4')" />
+                <path d="M 1000 701 A 30 30 0 0 0 1030 671" class="rata-osa yla-osa" data-nimi="Kaarre 5 - 31305" onclick="avaaTiedot('Yläkone - Kaarre 5')" />
+                <path d="M 1030 481 A 30 30 0 0 0 1000 451" class="rata-osa yla-osa" data-nimi="Kaarre 6 - 31306" onclick="avaaTiedot('Yläkone - Kaarre 6')" />
+                <path d="M -160 451 A 30 30 0 0 1 -190 421" class="rata-osa yla-osa" data-nimi="Kaarre 7 - 31307" onclick="avaaTiedot('Yläkone - Kaarre 7')" />
+                <text x="230" y="546" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">SO01 yläkone</text>
+                <line x1="915" y1="121" x2="965" y2="121" class="rata-osa ala-osa" data-nimi="KAMERATUNNELI 1" onclick="avaaTiedot('KAMERATUNNELI 1')" />
+                        <text x="940" y="125" text-anchor="middle" font-weight="bold" font-size="10" fill="white" pointer-events="none">Tunneli 1</text>
+              <line x1="910" y1="721" x2="960" y2="721" class="rata-osa ala-osa" data-nimi="KAMERATUNNELI 3" onclick="avaaTiedot('KAMERATUNNELI 3')" />
+                        <text x="935" y="725" text-anchor="middle" font-weight="bold" font-size="10" fill="white" pointer-events="none">Tunneli 3</text>
+            </g>
+        </svg>
+    </div>
+
+    <div class="modaali-tausta" id="tiedotIkkuna">
+        <div class="modaali">
+            <span class="sulje-nappi" onclick="suljeTiedot()">Sulje</span>
+            <h3 id="kuljettimenNimi">Nimi tähän</h3>
+            
+            <div class="tab-header" style="border-bottom: 2px solid #ddd; margin-top: 15px; margin-bottom: 15px; display: flex; gap: 5px;">
+                <button class="tab-btn active" onclick="vaihdaValilehti(event, 'perustiedot-tab')" style="padding: 10px 20px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px 4px 0 0; font-weight: bold;">Perustiedot & Huolto</button>
+                <button class="tab-btn" onclick="vaihdaValilehti(event, 'varaosat-tab')" style="padding: 10px 20px; cursor: pointer; background-color: #f1f1f1; color: #333; border: none; border-radius: 4px 4px 0 0;">Varaosat</button>
+            </div>
+
+            <div id="perustiedot-tab" class="tab-content" style="display: block;">
+                <div style="margin-top: 0px; padding: 12px; background-color: #f8f9f9; border-left: 5px solid #bdc3c7; border-radius: 4px;" id="vikaPaneeli">
+                    <p style="margin: 0 0 10px 0; font-size: 16px;">
+                        <strong>Laitteen tila: </strong> 
+                        <span id="vikaTilaTeksti" style="font-weight: bold; color: #27ae60;">Kunnossa</span>
+                    </p>
+                    <div id="vikaValinnat" style="margin-bottom: 10px;">
+                        <label for="vikaPrioriteetti"><strong>Vian tiedot:</strong></label>
+                        <select id="vikaPrioriteetti" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-top: 5px; margin-bottom: 10px; box-sizing: border-box;">
+                            <option value="korkea">🔴 Korkea (Kriittinen)</option>
+                            <option value="keski">🟠 Keski (Vakava)</option>
+                            <option value="matala">🟡 Matala (Huomio)</option>
+                        </select>
+                        <input type="text" id="vikaOtsikko" placeholder="Vian otsikko (esim. Rulla jumissa)" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 10px; box-sizing: border-box;">
+                        <select id="vikaSijainti" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 10px; box-sizing: border-box;">
+                            <option value="Määrittelemätön">Sijainti (Koko kuljetin)</option>
+                            <option value="Alkupää">Alkupää</option>
+                            <option value="Loppupää">Loppupää</option>
+                        </select>
+                        <input type="text" id="vikaKommentti" placeholder="Lisätiedot / Tarvittavat osat" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 10px; box-sizing: border-box;">
+                    </div>
+                    
+                    <button id="btnVikaToggle" class="toiminto-nappi " style="background-color: #e74c3c;" onclick="vaihdaVikaTilaa()">
+                        🚨 Ilmoita vika
+                    </button>
+                </div>
+
+                <h4 class="historia-otsikko">Huolto- ja vikahistoria</h4>
+                
+                <button id="btnNaytaLisays" class="toiminto-nappi nappi-lisaa " onclick="naytaLisaysLomake()">+ Kirjaa uusi huolto/vika</button>
+
+                <div id="lisaysLomake" class="lomake-alue">
+                    <form id="huoltoForm" onsubmit="tallennaUusiMerkinta(event)">
+                        <div class="lomake-rivi">
+                            <label>Tyyppi:</label>
+                            <select id="uusiTyoTyyppi" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="Vika">Vika</option>
+                                <option value="Peruskunnostus">Peruskunnostus</option>
+                                <option value="Kuntokartoituksen perusteella">Kuntokartoituksen perusteella</option>
+                                <option value="Muu huolto">Muu huolto</option>
+                            </select>
+                
+                            <label>Laite / Kohde (ID):</label>
+                            <input type="text" id="uusiLaiteID" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;" title="Voit siirtää työn toiselle laitteelle muuttamalla tätä tunnusta">
+                    
+                            <label>Status:</label>
+                            <select id="uusiStatus" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="Completed">✅ Valmis</option>
+                                <option value="New">⏳ Odottaa</option>
+                                <option value="-">Ei määritetty</option>
+                            </select>
+                            
+                            <input type="date" id="uusiPvm" required title="Päivämäärä">
+                            <input type="text" id="uusiTyoNumero" placeholder="Työnumero (esim. TYO-123)" required>
+                            <select id="uusiSijainti">
+                                <option value="Määrittelemätön">Sijainti (Koko kuljetin)</option>
+                                <option value="Alkupää">Alkupää</option>
+                                <option value="Loppupää">Loppupää</option>
+                            </select>
+                        </div>
+                        <div class="lomake-rivi">
+                            <input type="text" id="uusiTekija" placeholder="Tekijän nimi/nimikirjaimet">
+                            <input type="text" id="uusiOtsikko" placeholder="Otsikko (esim. Laakerin vaihto)" required style="flex: 2;">
+                            <input type="text" id="uusiOsat" placeholder="Vaihdetut osat (valinnainen)">
+                        </div>
+                        <div style="text-align: right; margin-top: 10px;">
+                            <button type="button" class="toiminto-nappi nappi-tallenna" onclick="tallennaUusiMerkinta(event)">💾 Tallenna</button>
+                            <button type="button" class="toiminto-nappi nappi-peruuta" onclick="piilotaLisaysLomake()">❌ Peruuta</button>
+                            <button type="button" id="btnPoistaTyö" class="toiminto-nappi nappi-peruuta" onclick="poistaValittuTyo()" style="display: none; background-color: #c0392b; margin-right: auto;">🗑️ Poista työ</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="historiaSisalto"></div>
+                <button class="excel-nappi" onclick="lataaExcel(false)">📥 Lataa tämän kuljettimen historia Exceliin</button>
+            </div>
+
+            <div id="varaosat-tab" class="tab-content" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                    <h4 class="historia-otsikko" style="margin: 0;">Kuljettimen varaosat</h4>
+                    <button class="toiminto-nappi nappi-lisaa admin-vain" onclick="lisaaUusiVaraosa()" style="margin: 0;">+ Lisää uusi varaosa</button>
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table class="varaosataulukko" style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
+                        <thead>
+                            <tr style="background-color: #f2f2f2;">
+                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Varaosanumero</th>
+                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Määrä</th>
+                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Nimi</th>
+                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Hyllypaikka</th>
+                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Toimittajan nro</th>
+                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left; width: 150px;">Toiminnot</th>
+                            </tr>
+                        </thead>
+                        <tbody id="varaosatRivit">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="rata-tooltip" style="
+        position: absolute; 
+        display: none; 
+        background: rgba(0, 0, 0, 0.8); 
+        color: white; 
+        padding: 5px 10px; 
+        border-radius: 4px; 
+        font-size: 12px; 
+        font-weight: bold;
+        pointer-events: none;
+        z-index: 10000;
+        white-space: nowrap;
+        transform: translate(15px, 15px);
+    "></div>
+</div>
+
+</body>
+</html>
