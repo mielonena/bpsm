@@ -204,7 +204,8 @@ async function tallennaUusiMerkinta(event) {
         const dateObj = new Date(pvmInput); pvmMuotoiltu = `${String(dateObj.getDate()).padStart(2, '0')}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${dateObj.getFullYear()}`;
     }
 
-    const tyoObj = {
+    // 1. TÄMÄ MENEE TIETOKANTAAN (käyttää alaviivoja eli snake_case)
+    const dbObj = {
         laite_id: kohdeLaiteID, pvm: pvmMuotoiltu, tyo_numero: tyoNumero, tyo_tyyppi: tyoTyyppi,
         sijainti, otsikko, osat, tekija, status
     };
@@ -219,24 +220,23 @@ async function tallennaUusiMerkinta(event) {
             if (siirretaanToiselle) {
                 await supabaseclient.from('huoltohistoria').delete().eq('id', vanhaMerkinta.id);
                 huoltoHistoria[valittuKuljetinID].splice(muokattavaIndeksi, 1);
-                const { data } = await supabaseclient.from('huoltohistoria').insert(tyoObj).select();
-                if(data && data[0]) tyoObj.id = data[0].id;
+                const { data } = await supabaseclient.from('huoltohistoria').insert(dbObj).select();
+                if(data && data[0]) dbObj.id = data[0].id;
             } else {
-                await supabaseclient.from('huoltohistoria').update(tyoObj).eq('id', vanhaMerkinta.id);
-                tyoObj.id = vanhaMerkinta.id;
+                await supabaseclient.from('huoltohistoria').update(dbObj).eq('id', vanhaMerkinta.id);
+                dbObj.id = vanhaMerkinta.id;
             }
         } else {
-            const { data } = await supabaseclient.from('huoltohistoria').insert(tyoObj).select();
-            if(data && data[0]) tyoObj.id = data[0].id;
+            const { data } = await supabaseclient.from('huoltohistoria').insert(dbObj).select();
+            if(data && data[0]) dbObj.id = data[0].id;
             
-            // LISÄTTY: RLS-virheentarkistus ja "New" -> "Completed" kuittaus
-            if (tyoObj.status === "Completed" && huoltoHistoria[kohdeLaiteID]) {
+            if (dbObj.status === "Completed" && huoltoHistoria[kohdeLaiteID]) {
                 const vanhatKeskeneraiset = huoltoHistoria[kohdeLaiteID].filter(t => t.status && t.status.toLowerCase() === "new");
                 for (let vanha of vanhatKeskeneraiset) {
                     const { error } = await supabaseclient.from('huoltohistoria').update({ status: 'Completed' }).eq('id', vanha.id);
                     if (error) {
                         console.error("Tietokantavirhe (RLS estää):", error);
-                        alert("HUOMIO: Tietokanta esti vanhan vian kuittauksen! Tämä johtuu Supabasen RLS-oikeuksista (peruskäyttäjällä ei ole lupaa päivittää vanhoja rivejä). Vika palaa näkyviin sivun päivityksen jälkeen.");
+                        alert("HUOMIO: Tietokanta esti vanhan vian kuittauksen! Tämä johtuu Supabasen RLS-oikeuksista.");
                     } else {
                         vanha.status = "Completed"; 
                     }
@@ -244,16 +244,34 @@ async function tallennaUusiMerkinta(event) {
             }
         }
 
+        // 2. TÄMÄ TALLENTUU SELAIMEN MUISTIIN (käyttää isoa kirjainta eli camelCase)
+        // Näin varmistetaan, että selain löytää "tyoNumero" ja "tyoTyyppi" heti ilman päivitystä.
+        const uiObj = {
+            id: dbObj.id, pvm: dbObj.pvm, tyoNumero: dbObj.tyo_numero, tyoTyyppi: dbObj.tyo_tyyppi,
+            sijainti: dbObj.sijainti, otsikko: dbObj.otsikko, osat: dbObj.osat, tekija: dbObj.tekija, status: dbObj.status
+        };
+
+        // Päivitetään paikallinen taulukko UI-objektilla
         if (siirretaanToiselle) {
             if (huoltoHistoria[valittuKuljetinID].length === 0) delete huoltoHistoria[valittuKuljetinID];
             await synkronoiLaitteenVikatila(valittuKuljetinID);
             if (!huoltoHistoria[kohdeLaiteID]) huoltoHistoria[kohdeLaiteID] = [];
-            huoltoHistoria[kohdeLaiteID].unshift(tyoObj);
+            huoltoHistoria[kohdeLaiteID].unshift(uiObj);
         } else {
             if (!huoltoHistoria[kohdeLaiteID]) huoltoHistoria[kohdeLaiteID] = [];
-            if (muokattavaIndeksi === -1) { huoltoHistoria[kohdeLaiteID].unshift(tyoObj); } 
-            else { huoltoHistoria[kohdeLaiteID][muokattavaIndeksi] = tyoObj; }
+            if (muokattavaIndeksi === -1) { huoltoHistoria[kohdeLaiteID].unshift(uiObj); } 
+            else { huoltoHistoria[kohdeLaiteID][muokattavaIndeksi] = uiObj; }
         }
+
+        await synkronoiLaitteenVikatila(kohdeLaiteID);
+        
+        piilotaLisaysLomake(); avaaTiedot(valittuKuljetinID); 
+        paivitaVikaKartta(); paivitaVikaLista(); paivitaKokoHistoriaNakyma();
+        paivitaPeruskunnostetutKartalle();
+    } catch (err) {
+        alert("Virhe tallennettaessa: " + err.message);
+    }
+}
 
         await synkronoiLaitteenVikatila(kohdeLaiteID);
         
