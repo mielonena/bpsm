@@ -1,0 +1,332 @@
+<style>
+    /* --- YLEISET TYYLIT JA TAUSTA --- */
+    body {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f4f7f6; /* Pehmeä, moderni vaaleanharmaa */
+        margin: 20px;
+        color: #2c3e50;
+    }
+
+    .ohjauspaneeli {
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    /* --- KARKKIMAISET PAINIKKEET (OHJAUSPANEELI) --- */
+    .taso-nappi {
+        padding: 10px 24px;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-radius: 50px; /* Täysi pilleripyöristys */
+        background-color: #ffffff;
+        color: #4b8ccc; /* Raikas pääväri */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s ease;
+    }
+
+    .taso-nappi:hover {
+        transform: translateY(-2px); /* Nousee hieman ylös */
+        box-shadow: 0 6px 15px rgba(91, 66, 243, 0.15); /* Varjo kasvaa ja saa väriä */
+        color: #4b8ccc;
+    }
+
+    .taso-nappi.aktiivinen {
+        background-color: #3498db;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(91, 66, 243, 0.3);
+    }
+
+    /* --- KARTTA-ALUE JA SVG --- */
+    .kartta-alue {
+        position: relative;
+        width: 1850px;
+        height: 1500px; 
+        background-color: #fdf5eb; /* Hieman pehmennetty oranssihtava tausta */
+        border-radius: 20px; /* Isot pehmeät kulmat */
+        border: none;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05); /* Leijuva efekti */
+        overflow: hidden;
+    }
+
+    /* --- RADAN JA KULJETTIMIEN PERUSTYYLIT --- */
+    .rata-osa {
+        fill: none; 
+        stroke-width: 20; 
+        stroke-linecap: butt !important; /* Palauttaa viivojen päät tasaisiksi */
+        cursor: pointer;
+        transition: stroke 0.2s, opacity 0.3s;
+        stroke: #f5832c !important; 
+    }
+
+    .rata-osa:hover {
+        stroke: #f79245 !important; 
+        /* Poistettu drop-shadow hehku */
+    }
+/* --- PERUSKUNNOSTUSNÄKYMÄN VÄRIT --- */
+    .rata-osa.peruskunnostettu {
+        stroke: #2ecc71 !important; /* Raikas karkkivihreä */
+    }
+
+    .rata-osa.peruskunnostettu:hover {
+        stroke: #27ae60 !important; /* Tummempi vihreä leijuessa */
+        filter: drop-shadow(0px 4px 6px rgba(46, 204, 113, 0.4));
+    }
+
+    /* --- TRUKKIVÄYLÄ (TIE) --- */
+    .tie {
+        stroke: #e0e0e0 !important;
+        stroke-linecap: round; 
+    }
+
+    /* --- KARTTATEKSTIT --- */
+    .rata-teksti {
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+        font-size: 10px;
+        text-anchor: middle;
+        fill: #333;
+        font-weight: bold;
+    }
+
+    .rata-osa:hover + .rata-teksti {
+        opacity: 1;
+    }
+
+    /* --- RUNKORADAT --- */
+    .yla-osa { stroke: #2b84ff !important; }
+    .yla-osa:hover { stroke: #0562e3 !important; } /* Palautettu alkuperäinen tummempi sininen */
+
+    .ala-osa { stroke: #2b84ff !important; }
+    .ala-osa:hover { stroke: #0562e3 !important; } /* Palautettu alkuperäinen tummempi sininen */
+
+    .vetoasema-osa { stroke: #f5832c !important; }
+    .vetoasema-osa:hover { stroke: #111111 !important; } /* Palautettu musta hover-väri */
+
+    /* --- VIKAPALLOT KARTALLA --- */
+    .vika-pallo {
+        cursor: pointer;
+        transition: r 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), fill 0.2s; /* Pomppaava animaatio */
+        filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.3));
+    }
+    .vika-pallo:hover {
+        r: 13; /* Kasvaa isommaksi */
+    }
+
+    /* --- SIVUNÄKYMÄKONTAINERIT (LISTAT JA VIAT) --- */
+    .lista-nakyma-container {
+        display: none;
+        background-color: #ffffff; /* Puhdas valkoinen */
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04); /* Pehmeä taustavarjo */
+        padding: 30px;
+        width: 1850px; 
+        box-sizing: border-box;
+        min-height: 800px;
+    }
+
+    /* --- LISTANÄKYMÄN OTSIKOT --- */
+    .lista-ryhma-kl h3 {
+        color: #2c3e50;
+        border-bottom: 2px solid #f1f2f6;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+        margin-top: 30px;
+        font-size: 22px;
+        font-weight: 800;
+    }
+
+    .lista-ryhma-linja h4 {
+        color: #7f8c8d;
+        margin-top: 15px;
+        margin-bottom: 12px;
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .lista-positiot {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    /* Listan pillerinapit */
+    .lista-positio-nappi {
+        padding: 10px 18px;
+        background-color: #ffffff;
+        border: none;
+        border-radius: 30px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: bold;
+        color: #34495e;
+        transition: all 0.3s ease;
+    }
+
+    .lista-positio-nappi:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        color: #5b42f3;
+    }
+
+    /* --- TAULUKOIDEN TYYLIT (Historia ja Vikatilasto) --- */
+    .vikatilasto-taulu, .historia-taulu {
+        width: 100%;
+        border-collapse: separate; /* Erotetut rivit mahdollistavat pyöristykset */
+        border-spacing: 0 8px; /* Rako rivien väliin */
+        margin-top: 15px;
+        font-size: 14px;
+    }
+
+    .vikatilasto-taulu th, .historia-taulu th {
+        background-color: transparent;
+        color: #95a5a6;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border: none;
+        padding: 12px 16px;
+        text-align: left;
+    }
+
+    .vikatilasto-taulu td, .historia-taulu td {
+        background-color: #f8f9fa; /* Riveillä on oma pehmeä taustaväri */
+        padding: 16px;
+        border: none;
+        color: #2c3e50;
+    }
+
+    /* Rivien reunojen pyöristykset */
+    .vikatilasto-taulu td:first-child, .historia-taulu td:first-child {
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+    .vikatilasto-taulu td:last-child, .historia-taulu td:last-child {
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    .vikatilasto-taulu tr:hover td, .historia-taulu tr:hover td {
+        background-color: #f1f2f6; /* Korostus rivillä leijuessa */
+    }
+
+    /* --- MODAALIT (Pop-up ikkunat) --- */
+    .modaali-tausta {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(15, 23, 42, 0.4); /* Pehmeämpi tummennus taustalle */
+        backdrop-filter: blur(4px); /* Sumentaa taustan upeasti */
+        z-index: 10;
+    }
+
+    .modaali {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 30px;
+        width: 80%;
+        border-radius: 24px; /* Ikkunassa reilu pyöristys */
+        box-shadow: 0 20px 50px rgba(0,0,0,0.15); /* Iso varjo tekee tästä leijuvan */
+        z-index: 11;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .sulje-nappi {
+        float: right;
+        cursor: pointer;
+        font-weight: bold;
+        color: #e74c3c;
+        font-size: 24px;
+        line-height: 1;
+        padding: 5px;
+        transition: transform 0.2s;
+    }
+    .sulje-nappi:hover {
+        transform: scale(1.2);
+    }
+
+    .historia-otsikko { 
+        margin-top: 30px; 
+        border-bottom: 2px solid #f1f2f6; 
+        padding-bottom: 10px; 
+        color: #2c3e50;
+    }
+
+    /* --- LOMAKKEET --- */
+    .lomake-alue {
+        display: none;
+        background-color: #fdfefe;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        padding: 24px;
+        margin-top: 20px;
+        border-radius: 16px;
+    }
+
+    .lomake-rivi { 
+        display: flex; 
+        gap: 15px; 
+        margin-bottom: 15px; 
+    }
+
+    .lomake-rivi input, .lomake-rivi select { 
+        padding: 12px 16px; 
+        border: 2px solid #e2e8f0; 
+        border-radius: 12px; 
+        flex: 1; 
+        font-family: inherit;
+        font-size: 14px;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .lomake-rivi input:focus, .lomake-rivi select:focus {
+        outline: none;
+        border-color: #5b42f3;
+        box-shadow: 0 0 0 3px rgba(91, 66, 243, 0.1);
+    }
+
+    /* --- TOIMINTONAPIT (Lomakkeet ja Excel) --- */
+    .toiminto-nappi, .excel-nappi { 
+        padding: 12px 24px; 
+        border: none; 
+        border-radius: 30px; 
+        cursor: pointer; 
+        font-weight: bold; 
+        font-size: 14px;
+        color: white; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .toiminto-nappi:hover, .excel-nappi:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    }
+
+    .nappi-lisaa { background-color: #3498db; margin-top: 15px; margin-bottom: 15px; }
+    .nappi-tallenna { background-color: #2ecc71; }
+    .nappi-peruuta { background-color: #e74c3c; }
+    .excel-nappi { background-color: #27ae60; margin-top: 15px; }
+
+::-webkit-scrollbar {
+  width: 20px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f79245;
+}
+
+::-webkit-scrollbar-thumb {
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+}
+</style>

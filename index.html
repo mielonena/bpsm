@@ -74,7 +74,23 @@
 <body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js"></script>
+<!-- 1. Alustukset ja data ensin -->
+<script src="js/1_globals.js"></script>
+<script src="js/3_data.js"></script>
+<script src="js/2_auth.js"></script>
+
+<!-- 2. Käyttöliittymä ja visuaalit -->
+<script src="js/4_map.js"></script>
+<script src="js/5_ui.js"></script>
+
+<!-- 3. Toiminnallisuudet -->
+<script src="js/6_faults.js"></script>
+<script src="js/7_history.js"></script>
+<script src="js/8_parts.js"></script>
+<script src="js/9_excel.js"></script>
+
+<!-- 4. Käynnistys lopuksi -->
+<script src="js/10_app.js"></script>
 
 <div id="login-container">
     <div id="login-form">
@@ -92,6 +108,7 @@
         <button id="btnYla" class="taso-nappi" onclick="vaihdaTaso('yla')">Yläkone</button>
         <button id="btnAla" class="taso-nappi" onclick="vaihdaTaso('ala')">Alakone</button>
         <button id="btnLista" class="taso-nappi" onclick="vaihdaTaso('lista')">Kaikki positiot</button>
+	<button id="btnKaapit" class="taso-nappi tablink" onclick="vaihdaTaso('kaapit')">Sähkökeskukset</button>
         <button id="btnPeruskunnostetut" class="taso-nappi" onclick="vaihdaPeruskunnostusNakyma()">Peruskunnostetut</button>
         
         <select id="pk-vuosi-asetus" onchange="paivitaPeruskunnostetutKartalle()" style="display: none; padding: 10px 10px; border-radius: 50px; border: 2px solid #2ecc71; font-weight: bold; color: #2c3e50; background-color: #fdfefe; margin-right: 10px; outline: none; cursor: pointer; transition: all 0.3s;">
@@ -562,7 +579,10 @@
             </g>
         </svg>
     </div>
-
+<div id="kaapit-alue" style="display:none; width: 100%; overflow-x: auto; background-color: #f8f9f9; border-radius: 8px; border: 1px solid #bdc3c7; margin-top: 15px;">
+    <svg id="sahkokeskukset-svg" width="100%" height="850" viewBox="-20 20 1650 850" style="min-width: 1200px;">
+        </svg>
+</div>
     <div class="modaali-tausta" id="tiedotIkkuna">
         <div class="modaali">
             <span class="sulje-nappi" onclick="suljeTiedot()">Sulje</span>
