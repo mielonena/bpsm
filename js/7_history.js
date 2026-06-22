@@ -204,7 +204,6 @@ async function tallennaUusiMerkinta(event) {
         const dateObj = new Date(pvmInput); pvmMuotoiltu = `${String(dateObj.getDate()).padStart(2, '0')}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${dateObj.getFullYear()}`;
     }
 
-    // 1. TÄMÄ MENEE TIETOKANTAAN (käyttää alaviivoja eli snake_case)
     const dbObj = {
         laite_id: kohdeLaiteID, pvm: pvmMuotoiltu, tyo_numero: tyoNumero, tyo_tyyppi: tyoTyyppi,
         sijainti, otsikko, osat, tekija, status
@@ -244,14 +243,11 @@ async function tallennaUusiMerkinta(event) {
             }
         }
 
-        // 2. TÄMÄ TALLENTUU SELAIMEN MUISTIIN (käyttää isoa kirjainta eli camelCase)
-        // Näin varmistetaan, että selain löytää "tyoNumero" ja "tyoTyyppi" heti ilman päivitystä.
         const uiObj = {
             id: dbObj.id, pvm: dbObj.pvm, tyoNumero: dbObj.tyo_numero, tyoTyyppi: dbObj.tyo_tyyppi,
             sijainti: dbObj.sijainti, otsikko: dbObj.otsikko, osat: dbObj.osat, tekija: dbObj.tekija, status: dbObj.status
         };
 
-        // Päivitetään paikallinen taulukko UI-objektilla
         if (siirretaanToiselle) {
             if (huoltoHistoria[valittuKuljetinID].length === 0) delete huoltoHistoria[valittuKuljetinID];
             await synkronoiLaitteenVikatila(valittuKuljetinID);
@@ -262,16 +258,6 @@ async function tallennaUusiMerkinta(event) {
             if (muokattavaIndeksi === -1) { huoltoHistoria[kohdeLaiteID].unshift(uiObj); } 
             else { huoltoHistoria[kohdeLaiteID][muokattavaIndeksi] = uiObj; }
         }
-
-        await synkronoiLaitteenVikatila(kohdeLaiteID);
-        
-        piilotaLisaysLomake(); avaaTiedot(valittuKuljetinID); 
-        paivitaVikaKartta(); paivitaVikaLista(); paivitaKokoHistoriaNakyma();
-        paivitaPeruskunnostetutKartalle();
-    } catch (err) {
-        alert("Virhe tallennettaessa: " + err.message);
-    }
-}
 
         await synkronoiLaitteenVikatila(kohdeLaiteID);
         
