@@ -5,91 +5,30 @@
     <title>BPSM</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Yksinkertaiset tyylit kirjautumislomakkeelle */
-        #login-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f6f7;
-            font-family: Arial, sans-serif;
-        }
-        #login-form {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-            width: 100%;
-            max-width: 300px;
-        }
-        #login-form input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        #login-btn {
-            width: 100%;
-            padding: 10px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        #login-btn:hover {
-            background-color: #2980b9;
-        }
-        #logout-btn {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-left: auto;
-        }
-        #logout-btn:hover {
-            background-color: #c0392b;
-        }
-        #login-error {
-            color: #e74c3c;
-            margin-top: 10px;
-            font-size: 14px;
-            display: none;
-        }
-        
-        /* TÄMÄ LUOKKA PIILOTTAA NAPIT PERUSKÄYTTÄJÄLTÄ */
-        .admin-vain {
-            display: none !important;
-        }
+        #login-container { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f6f7; font-family: Arial, sans-serif; }
+        #login-form { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 300px; }
+        #login-form input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        #login-btn { width: 100%; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        #login-btn:hover { background-color: #2980b9; }
+        #logout-btn { background-color: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: auto; }
+        #logout-btn:hover { background-color: #c0392b; }
+        #login-error { color: #e74c3c; margin-top: 10px; font-size: 14px; display: none; }
+        .admin-vain { display: none !important; }
     </style>
 </head>
 <body>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- 1. Alustukset ja data ensin -->
 <script src="js/1_globals.js"></script>
 <script src="js/3_data.js"></script>
 <script src="js/2_auth.js"></script>
-
-<!-- 2. Käyttöliittymä ja visuaalit -->
 <script src="js/4_map.js"></script>
 <script src="js/5_ui.js"></script>
-
-<!-- 3. Toiminnallisuudet -->
 <script src="js/6_faults.js"></script>
 <script src="js/7_history.js"></script>
 <script src="js/8_parts.js"></script>
 <script src="js/9_excel.js"></script>
-
-<!-- 4. Käynnistys lopuksi -->
 <script src="js/10_app.js"></script>
 
 <div id="login-container">
@@ -108,7 +47,7 @@
         <button id="btnYla" class="taso-nappi" onclick="vaihdaTaso('yla')">Yläkone</button>
         <button id="btnAla" class="taso-nappi" onclick="vaihdaTaso('ala')">Alakone</button>
         <button id="btnLista" class="taso-nappi" onclick="vaihdaTaso('lista')">Kaikki positiot</button>
-	<button id="btnKaapit" class="taso-nappi tablink" onclick="vaihdaTaso('kaapit')">Sähkökeskukset</button>
+        <button id="btnKaapit" class="taso-nappi tablink" onclick="vaihdaTaso('kaapit')">⚡ Sähkökeskukset</button>
         <button id="btnPeruskunnostetut" class="taso-nappi" onclick="vaihdaPeruskunnostusNakyma()">Peruskunnostetut</button>
         
         <select id="pk-vuosi-asetus" onchange="paivitaPeruskunnostetutKartalle()" style="display: none; padding: 10px 10px; border-radius: 50px; border: 2px solid #2ecc71; font-weight: bold; color: #2c3e50; background-color: #fdfefe; margin-right: 10px; outline: none; cursor: pointer; transition: all 0.3s;">
@@ -149,8 +88,8 @@
     </div>
 
     <div id="lista-alue" class="lista-nakyma-container"></div>
-    <div id="viat-alue" class="lista-nakyma-container" style="background-color: #fcf3f2; border-color: #e74c3c;"></div>
-    <div id="historia-alue" class="lista-nakyma-container" style="background-color: #f4f6f7; border-color: #8e44ad;"></div>
+    <div id="viat-alue" class="lista-nakyma-container" style="background-color: #fcf3f2; border-color: #e74c3c; display:none;"></div>
+    <div id="historia-alue" class="lista-nakyma-container" style="background-color: #f4f6f7; border-color: #8e44ad; display:none;"></div>
     <div id="varaosat-alue" style="display: none; padding: 20px;"></div>
     
     <div class="kartta-alue">
@@ -164,14 +103,11 @@
                     <path d="M 250 0 L 0 0 0 250" fill="none" stroke="#7f8c8d" stroke-width="2"/>
                 </pattern>
             </defs>
-
             <rect id="apuRuudukko" width="1850" height="1600" x="-250" y="-200" fill="url(#isoRuudukko)" pointer-events="none" style="display: none;" />
-            
             <g id="tie">
                 <line x1="480" y1="-250" x2="480" y2="1250" class="tie" style="stroke: #e0e0e0; stroke-width: 90;" data-nimi="tie"/>
                 <text x="480" y="280" fill="#95a5a6" font-weight="bold" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" style="writing-mode: vertical-rl; text-orientation: upright;" pointer-events="none">TRUKKIVÄYLÄ</text>
             </g>
-            
             <g id="suorat">
                 <text x="450" y="1080" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">A1</text>
                  <text x="510" y="1080" text-anchor="middle" font-weight="bold" fill="#333" pointer-events="none">A2</text>
@@ -580,137 +516,174 @@
         </svg>
     </div>
 <div id="kaapit-alue" style="display:none; width: 100%; overflow-x: auto; background-color: #f8f9f9; border-radius: 8px; border: 1px solid #bdc3c7; margin-top: 15px;">
-    <svg id="sahkokeskukset-svg" width="100%" height="850" viewBox="-20 20 1650 850" style="min-width: 1200px;">
+        <svg id="sahkokeskukset-svg" width="100%" height="850" viewBox="-20 20 1650 850" style="min-width: 1200px;">
         </svg>
-</div>
+    </div>
     <div class="modaali-tausta" id="tiedotIkkuna">
         <div class="modaali">
             <span class="sulje-nappi" onclick="suljeTiedot()">Sulje</span>
             <h3 id="kuljettimenNimi">Nimi tähän</h3>
-            
-            <div class="tab-header" style="border-bottom: 2px solid #ddd; margin-top: 15px; margin-bottom: 15px; display: flex; gap: 5px;">
-                <button class="tab-btn active" onclick="vaihdaValilehti(event, 'perustiedot-tab')" style="padding: 10px 20px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px 4px 0 0; font-weight: bold;">Perustiedot & Huolto</button>
-                <button class="tab-btn" onclick="vaihdaValilehti(event, 'varaosat-tab')" style="padding: 10px 20px; cursor: pointer; background-color: #f1f1f1; color: #333; border: none; border-radius: 4px 4px 0 0;">Varaosat</button>
-            </div>
 
-            <div id="perustiedot-tab" class="tab-content" style="display: block;">
-                <div style="margin-top: 0px; padding: 12px; background-color: #f8f9f9; border-left: 5px solid #bdc3c7; border-radius: 4px;" id="vikaPaneeli">
-                    <p style="margin: 0 0 10px 0; font-size: 16px;">
-                        <strong>Laitteen tila: </strong> 
-                        <span id="vikaTilaTeksti" style="font-weight: bold; color: #27ae60;">Kunnossa</span>
-                    </p>
-                    <div id="vikaValinnat" style="margin-bottom: 10px;">
-                        <label for="vikaPrioriteetti"><strong>Vian tiedot:</strong></label>
-                        <select id="vikaPrioriteetti" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-top: 5px; margin-bottom: 10px; box-sizing: border-box;">
-                            <option value="korkea">🔴 Korkea (Kriittinen)</option>
-                            <option value="keski">🟠 Keski (Vakava)</option>
-                            <option value="matala">🟡 Matala (Huomio)</option>
-                        </select>
-                        <input type="text" id="vikaOtsikko" placeholder="Vian otsikko (esim. Rulla jumissa)" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 10px; box-sizing: border-box;">
-                        <select id="vikaSijainti" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 10px; box-sizing: border-box;">
-                            <option value="Määrittelemätön">Sijainti (Koko kuljetin)</option>
-                            <option value="Alkupää">Alkupää</option>
-                            <option value="Loppupää">Loppupää</option>
-                        </select>
-                        <input type="text" id="vikaKommentti" placeholder="Lisätiedot / Tarvittavat osat" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 10px; box-sizing: border-box;">
-                    </div>
-                    
-                    <button id="btnVikaToggle" class="toiminto-nappi " style="background-color: #e74c3c;" onclick="vaihdaVikaTilaa()">
-                        🚨 Ilmoita vika
-                    </button>
+            <div id="visuaalinen-kaappi-alue" style="display: none; background: #ffffff; border: 1px solid #bdc3c7; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
+    <div id="kaappi-tyyppitiedot" style="background: #ecf0f1; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; color: #2c3e50;"></div>
+    
+    <div style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 20px; align-items: flex-start;">
+        
+        <div style="flex: 1; min-width: 400px; text-align: center;">
+            <svg id="sd-kaappi-svg" viewBox="0 0 800 950" style="width: 100%; max-width: 600px; background-color: #f8f9f9; border: 1px solid #bdc3c7; border-radius: 4px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);"></svg>
+        </div>
+
+        <div id="kaappi-osan-tiedot" style="display: none; width: 320px; flex-shrink: 0; background: #fdfefe; border: 2px solid #3498db; border-radius: 6px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: sticky; top: 20px; max-height: 90vh; overflow-y: auto;">
+    <h4 style="margin-top: 0; color: #2980b9; border-bottom: 1px solid #eee; padding-bottom: 8px; display: flex; justify-content: space-between;">
+        Osan tiedot
+        <span style="cursor: pointer; color: #e74c3c;" onclick="document.getElementById('kaappi-osan-tiedot').style.display='none'">✖</span>
+    </h4>
+    <p style="margin: 8px 0; font-size: 14px;"><strong>Kuvan nro:</strong> <span id="ko-numero" style="color: #e74c3c; font-weight: bold;">-</span></p>
+    <p style="margin: 8px 0; font-size: 14px;"><strong>Nimi:</strong> <span id="ko-nimi">-</span></p>
+    <p style="margin: 8px 0; font-size: 14px;"><strong>Varaosanro:</strong> <span id="ko-varaosanro">-</span></p>
+    <p style="margin: 8px 0; font-size: 14px;"><strong>Tuotenro:</strong> <span id="ko-tuotenro">-</span></p>
+    <p style="margin: 8px 0; font-size: 14px;"><strong>Hyllypaikka:</strong> <span id="ko-hyllypaikka">-</span></p>
+    
+    <button class="toiminto-nappi" style="background-color: #27ae60; color: white; width: 100%; padding: 8px; border: none; border-radius: 4px; font-weight: bold; margin-top: 15px; cursor: pointer;" onclick="avaaKaappiHuoltoLomake()">✏️ Kirjaa vaihto</button>
+
+    <div id="kaappi-huolto-lomake" style="display: none; margin-top: 15px; background: #f2f4f4; padding: 10px; border-radius: 4px; border: 1px solid #bdc3c7;">
+        <label style="font-size: 12px; font-weight: bold;">Päivämäärä:</label>
+        <input type="date" id="kh-pvm" style="width: 100%; padding: 6px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        
+        <label style="font-size: 12px; font-weight: bold;">Toimenpide:</label>
+        <input type="text" id="kh-toimenpide" placeholder="Esim. Vaihdettu uuteen" style="width: 100%; padding: 6px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        
+        <label style="font-size: 12px; font-weight: bold;">Vaihdettu varaosa (Automaattinen):</label>
+        <input type="text" id="kh-osa" readonly style="width: 100%; padding: 6px; margin-bottom: 8px; border: 1px solid #bdc3c7; border-radius: 4px; box-sizing: border-box; background-color: #e9ecef; color: #2c3e50; font-weight: bold; cursor: not-allowed;">
+
+        <label style="font-size: 12px; font-weight: bold;">Tekijä:</label>
+        <input type="text" id="kh-tekija" placeholder="Nimikirjaimet" style="width: 100%; padding: 6px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+
+        <div style="display: flex; gap: 5px;">
+            <button onclick="tallennaKaapinOsanHuolto()" style="flex: 1; background: #3498db; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold;">Tallenna</button>
+            <button onclick="document.getElementById('kaappi-huolto-lomake').style.display='none'" style="background: #95a5a6; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer;">Peruuta</button>
+        </div>
+    </div>
+
+    <div id="kaappi-historia-lista" style="margin-top: 20px; font-size: 13px; color: #2c3e50; border-top: 2px solid #ecf0f1; padding-top: 10px;">
+        </div>
+</div>
+        
+    </div>
+    
+    <p style="text-align: center; font-size: 13px; color: #7f8c8d; margin-top: 15px;">💡 Klikkaa kaapin osaa nähdäksesi varaosatiedot oikealla.</p>
+</div>
+
+            <div id="normaali-laitetiedot">
+                <div class="tab-header" style="border-bottom: 2px solid #ddd; margin-top: 15px; margin-bottom: 15px; display: flex; gap: 5px;">
+                    <button class="tab-btn active" onclick="vaihdaValilehti(event, 'perustiedot-tab')" style="padding: 10px 20px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px 4px 0 0; font-weight: bold;">Perustiedot & Huolto</button>
+                    <button class="tab-btn" onclick="vaihdaValilehti(event, 'varaosat-tab')" style="padding: 10px 20px; cursor: pointer; background-color: #f1f1f1; color: #333; border: none; border-radius: 4px 4px 0 0;">Varaosat</button>
                 </div>
 
-                <h4 class="historia-otsikko">Huolto- ja vikahistoria</h4>
-                
-                <button id="btnNaytaLisays" class="toiminto-nappi nappi-lisaa " onclick="naytaLisaysLomake()">+ Kirjaa uusi huolto/vika</button>
-
-                <div id="lisaysLomake" class="lomake-alue">
-                    <form id="huoltoForm" onsubmit="tallennaUusiMerkinta(event)">
-                        <div class="lomake-rivi">
-                            <label>Tyyppi:</label>
-                            <select id="uusiTyoTyyppi" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
-                                <option value="Vika">Vika</option>
-                                <option value="Peruskunnostus">Peruskunnostus</option>
-                                <option value="Kuntokartoituksen perusteella">Kuntokartoituksen perusteella</option>
-                                <option value="Muu huolto">Muu huolto</option>
+                <div id="perustiedot-tab" class="tab-content" style="display: block;">
+                    <div style="margin-top: 0px; padding: 12px; background-color: #f8f9f9; border-left: 5px solid #bdc3c7; border-radius: 4px;" id="vikaPaneeli">
+                        <p style="margin: 0 0 10px 0; font-size: 16px;">
+                            <strong>Laitteen tila: </strong> 
+                            <span id="vikaTilaTeksti" style="font-weight: bold; color: #27ae60;">Kunnossa</span>
+                        </p>
+                        <div id="vikaValinnat" style="margin-bottom: 10px;">
+                            <label for="vikaPrioriteetti"><strong>Vian tiedot:</strong></label>
+                            <select id="vikaPrioriteetti" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-top: 5px; margin-bottom: 10px; box-sizing: border-box;">
+                                <option value="korkea">🔴 Korkea (Kriittinen)</option>
+                                <option value="keski">🟠 Keski (Vakava)</option>
+                                <option value="matala">🟡 Matala (Huomio)</option>
                             </select>
-                
-                            <label>Laite / Kohde (ID):</label>
-                            <input type="text" id="uusiLaiteID" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;" title="Voit siirtää työn toiselle laitteelle muuttamalla tätä tunnusta">
-                    
-                            <label>Status:</label>
-                            <select id="uusiStatus" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;">
-                                <option value="Completed">✅ Valmis</option>
-                                <option value="New">⏳ Odottaa</option>
-                                <option value="-">Ei määritetty</option>
-                            </select>
-                            
-                            <input type="date" id="uusiPvm" required title="Päivämäärä">
-                            <input type="text" id="uusiTyoNumero" placeholder="Työnumero (esim. TYO-123)" required>
-                            <select id="uusiSijainti">
+                            <input type="text" id="vikaOtsikko" placeholder="Vian otsikko (esim. Rulla jumissa)" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 10px; box-sizing: border-box;">
+                            <select id="vikaSijainti" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 10px; box-sizing: border-box;">
                                 <option value="Määrittelemätön">Sijainti (Koko kuljetin)</option>
                                 <option value="Alkupää">Alkupää</option>
                                 <option value="Loppupää">Loppupää</option>
                             </select>
+                            <input type="text" id="vikaKommentti" placeholder="Lisätiedot / Tarvittavat osat" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 10px; box-sizing: border-box;">
                         </div>
-                        <div class="lomake-rivi">
-                            <input type="text" id="uusiTekija" placeholder="Tekijän nimi/nimikirjaimet">
-                            <input type="text" id="uusiOtsikko" placeholder="Otsikko (esim. Laakerin vaihto)" required style="flex: 2;">
-                            <input type="text" id="uusiOsat" placeholder="Vaihdetut osat (valinnainen)">
-                        </div>
-                        <div style="text-align: right; margin-top: 10px;">
-                            <button type="button" class="toiminto-nappi nappi-tallenna" onclick="tallennaUusiMerkinta(event)">💾 Tallenna</button>
-                            <button type="button" class="toiminto-nappi nappi-peruuta" onclick="piilotaLisaysLomake()">❌ Peruuta</button>
-                            <button type="button" id="btnPoistaTyö" class="toiminto-nappi nappi-peruuta" onclick="poistaValittuTyo()" style="display: none; background-color: #c0392b; margin-right: auto;">🗑️ Poista työ</button>
-                        </div>
-                    </form>
+                        <button id="btnVikaToggle" class="toiminto-nappi" style="background-color: #e74c3c;" onclick="vaihdaVikaTilaa()">
+                            🚨 Ilmoita vika
+                        </button>
+                    </div>
+
+                    <h4 class="historia-otsikko">Huolto- ja vikahistoria</h4>
+                    
+                    <button id="btnNaytaLisays" class="toiminto-nappi nappi-lisaa" onclick="naytaLisaysLomake()">+ Kirjaa uusi huolto/vika</button>
+
+                    <div id="lisaysLomake" class="lomake-alue" style="display: none;">
+                        <form id="huoltoForm" onsubmit="tallennaUusiMerkinta(event)">
+                            <div class="lomake-rivi">
+                                <label>Tyyppi:</label>
+                                <select id="uusiTyoTyyppi" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <option value="Vika">Vika</option>
+                                    <option value="Peruskunnostus">Peruskunnostus</option>
+                                    <option value="Kuntokartoituksen perusteella">Kuntokartoituksen perusteella</option>
+                                    <option value="Muu huolto">Muu huolto</option>
+                                </select>
+                    
+                                <label>Laite / Kohde (ID):</label>
+                                <input type="text" id="uusiLaiteID" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;" title="Voit siirtää työn toiselle laitteelle muuttamalla tätä tunnusta">
+                    
+                                <label>Status:</label>
+                                <select id="uusiStatus" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <option value="Completed">✅ Valmis</option>
+                                    <option value="New">⏳ Odottaa</option>
+                                    <option value="-">Ei määritetty</option>
+                                </select>
+                                
+                                <input type="date" id="uusiPvm" required title="Päivämäärä">
+                                <input type="text" id="uusiTyoNumero" placeholder="Työnumero (esim. TYO-123)" required>
+                                <select id="uusiSijainti">
+                                    <option value="Määrittelemätön">Sijainti (Koko kuljetin)</option>
+                                    <option value="Alkupää">Alkupää</option>
+                                    <option value="Loppupää">Loppupää</option>
+                                </select>
+                            </div>
+                            <div class="lomake-rivi">
+                                <input type="text" id="uusiTekija" placeholder="Tekijän nimi/nimikirjaimet">
+                                <input type="text" id="uusiOtsikko" placeholder="Otsikko (esim. Laakerin vaihto)" required style="flex: 2;">
+                                <input type="text" id="uusiOsat" placeholder="Vaihdetut osat (valinnainen)">
+                            </div>
+                            <div style="text-align: right; margin-top: 10px;">
+                                <button type="button" class="toiminto-nappi nappi-tallenna" onclick="tallennaUusiMerkinta(event)">💾 Tallenna</button>
+                                <button type="button" class="toiminto-nappi nappi-peruuta" onclick="piilotaLisaysLomake()">❌ Peruuta</button>
+                                <button type="button" id="btnPoistaTyö" class="toiminto-nappi nappi-peruuta" onclick="poistaValittuTyo()" style="display: none; background-color: #c0392b; margin-right: auto;">🗑️ Poista työ</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="historiaSisalto"></div>
+                    <button class="excel-nappi" onclick="lataaExcel(false)">📥 Lataa tämän kuljettimen historia Exceliin</button>
                 </div>
 
-                <div id="historiaSisalto"></div>
-                <button class="excel-nappi" onclick="lataaExcel(false)">📥 Lataa tämän kuljettimen historia Exceliin</button>
+                <div id="varaosat-tab" class="tab-content" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <h4 class="historia-otsikko" style="margin: 0;">Kuljettimen varaosat</h4>
+                        <button class="toiminto-nappi nappi-lisaa admin-vain" onclick="lisaaUusiVaraosa()" style="margin: 0;">+ Lisää uusi varaosa</button>
+                    </div>
+                    
+                    <div style="overflow-x: auto;">
+                        <table class="varaosataulukko" style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
+                            <thead>
+                                <tr style="background-color: #f2f2f2;">
+                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Varaosanumero</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Määrä</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Nimi</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Hyllypaikka</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Toimittajan nro</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; text-align: left; width: 150px;">Toiminnot</th>
+                                </tr>
+                            </thead>
+                            <tbody id="varaosatRivit"></tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
-
-            <div id="varaosat-tab" class="tab-content" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                    <h4 class="historia-otsikko" style="margin: 0;">Kuljettimen varaosat</h4>
-                    <button class="toiminto-nappi nappi-lisaa admin-vain" onclick="lisaaUusiVaraosa()" style="margin: 0;">+ Lisää uusi varaosa</button>
-                </div>
-                
-                <div style="overflow-x: auto;">
-                    <table class="varaosataulukko" style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
-                        <thead>
-                            <tr style="background-color: #f2f2f2;">
-                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Varaosanumero</th>
-                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Määrä</th>
-                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Nimi</th>
-                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Hyllypaikka</th>
-                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Toimittajan nro</th>
-                                <th style="border: 1px solid #ccc; padding: 8px; text-align: left; width: 150px;">Toiminnot</th>
-                            </tr>
-                        </thead>
-                        <tbody id="varaosatRivit">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-
         </div>
     </div>
 
-    <div id="rata-tooltip" style="
-        position: absolute; 
-        display: none; 
-        background: rgba(0, 0, 0, 0.8); 
-        color: white; 
-        padding: 5px 10px; 
-        border-radius: 4px; 
-        font-size: 12px; 
-        font-weight: bold;
-        pointer-events: none;
-        z-index: 10000;
-        white-space: nowrap;
-        transform: translate(15px, 15px);
-    "></div>
+    <div id="rata-tooltip" style="position: absolute; display: none; background: rgba(0, 0, 0, 0.8); color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; pointer-events: none; z-index: 10000; white-space: nowrap; transform: translate(15px, 15px);"></div>
 </div>
 
 </body>
