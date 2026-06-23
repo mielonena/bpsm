@@ -53,7 +53,62 @@ function muokkaaVaraosa(laiteId, index) {
         </td>
     `;
 }
+async function naytaKaapinOsanTiedot(kaapinNimi, osaNumero) {
+    console.log(`Klikattu kaappia: "${kaapinNimi}", Osa: "${osaNumero}"`);
+    
+    // MÄÄRITETÄÄN YHTEINEN POHJA VARAOSILLE
+    // Jos klikatun kaapin nimessä on "SD", haetaan osat "SD-kaappi" -nimisestä mallipohjasta
+    let kaappiTyyppi = kaapinNimi;
+    if (kaapinNimi.includes("SD")) {
+        kaappiTyyppi = "SD-kaappi"; 
+    }
 
+    const paneeli = document.getElementById("kaappi-osan-tiedot");
+    if (!paneeli) return;
+    
+    paneeli.style.display = "block";
+    document.getElementById("ko-numero").innerText = osaNumero;
+    document.getElementById("ko-nimi").innerText = "Ladataan...";
+    document.getElementById("ko-varaosanro").innerText = "Ladataan...";
+    document.getElementById("ko-tuotenro").innerText = "Ladataan...";
+    document.getElementById("ko-hyllypaikka").innerText = "Ladataan...";
+
+    try {
+        // 1. HAETAAN VARAOSATIEDOT YHTEISESTÄ POHJASTA (esim. "SD-kaappi")
+        const { data, error } = await supabaseclient
+            .from('sahkokaapin_osat')
+            .select('*')
+            .eq('kaappi', kaappiTyyppi) // HUOM! Käytetään yhteistä tyyppiä
+            .eq('positio', osaNumero) 
+            .maybeSingle();
+
+        if (error) {
+            console.warn("Virhe:", error.message);
+            document.getElementById("ko-nimi").innerText = "Virhe tietokantahaussa";
+        } else if (!data) {
+            document.getElementById("ko-nimi").innerText = "Ei löytynyt tietokannasta";
+            document.getElementById("ko-varaosanro").innerText = "-";
+            document.getElementById("ko-tuotenro").innerText = "-";
+            document.getElementById("ko-hyllypaikka").innerText = "-";
+        } else {
+            document.getElementById("ko-nimi").innerText = data.nimi || "-";
+            document.getElementById("ko-varaosanro").innerText = data.varaosanumero || "-";
+            document.getElementById("ko-tuotenro").innerText = data.tuotenumero || "-";
+            document.getElementById("ko-hyllypaikka").innerText = data.hyllypaikka || "-";
+        }
+    } catch (err) {
+        console.error("Virhe:", err);
+        document.getElementById("ko-nimi").innerText = "Yhteysvirhe";
+    }
+
+    // 2. ASETETAAN HISTORIAAN YKSILÖLLINEN KAAPPI (esim. "SO02.SD003")
+    // Tämä takaa sen, että huoltohistoria menee oikealle laitteelle!
+    aktiivinenKaappi = kaapinNimi; 
+    aktiivinenOsaNumero = osaNumero;
+    
+    // Haetaan tämän kyseisen yksilön historia
+    paivitaKaapinOsanHistoria();
+}
 async function tallennaVaraosa(laiteId, index) {
     if(!onkoAdmin) return;
     const osa = varaosatData[laiteId][index];
@@ -255,4 +310,103 @@ async function tallennaMasterVaraosa(oikeaNumero, turvallinenId) {
         generoiKaikkiVaraosatNakyma();
         alert(`✅ Tallennettu ja synkronoitu pilvitietokantaan osanumero: ${oikeaNumero}`);
     } catch(err) { alert("Virhe tallennuksessa: " + err.message); }
+}// 2. Apufunktio lomakkeen avaamiseen
+function avaaKaappiHuoltoLomake() {
+    document.getElementById("kaappi-huolto-lomake").style.display = "block";
+    document.getElementById("kh-pvm").valueAsDate = new Date();
+    
+    // Nappaa näytöllä olevan varaosanumeron tekstin
+    const varaosaNro = document.getElementById("ko-varaosanro").innerText;
+    const varaosaInput = document.getElementById("kh-osa");
+    
+    // Tarkistetaan, että numero on oikea, eikä väliaikainen latausteksti tai viiva
+    if (varaosaNro && varaosaNro !== "-" && varaosaNro !== "Ladataan...") {
+        // Esitäytetään kenttä kyseisen osan numerolla
+        varaosaInput.value = varaosaNro;
+    } else {
+        // Tyhjennetään kenttä varmuuden vuoksi, jos osaa ei ollut
+        varaosaInput.value = ""; 
+    }
+}
+
+// 3. Funktio, joka hakee kyseisen osan historian Supabasesta
+async function paivitaKaapinOsanHistoria() {
+    const historiaLista = document.getElementById("kaappi-historia-lista");
+    historiaLista.innerHTML = "<em>Ladataan historiaa...</em>";
+
+    const { data, error } = await supabaseclient
+        .from('kaapin_huoltohistoria')
+        .select('*')
+        .eq('kaappi', aktiivinenKaappi)
+        .eq('positio', aktiivinenOsaNumero)
+        .order('pvm', { ascending: false });
+
+    if (error) {
+        historiaLista.innerHTML = "<em>Virhe historian latauksessa.</em>";
+        console.error(error);
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        historiaLista.innerHTML = "<em>Ei aiempaa huoltohistoriaa.</em>";
+        return;
+    }
+
+    // Piirretään historia siistiksi listaksi
+    let html = `<h5 style="margin: 0 0 10px 0; color: #7f8c8d;">Historia (${data.length} merkintää):</h5>`;
+    html += `<ul style="padding-left: 15px; margin: 0; list-style-type: square;">`;
+    
+    data.forEach(rivi => {
+        // Käännetään päivämäärä suomalaiseen muotoon (YYYY-MM-DD -> DD.MM.YYYY)
+        const pvmOsat = rivi.pvm.split('-');
+        const suomiPvm = `${pvmOsat[2]}.${pvmOsat[1]}.${pvmOsat[0]}`;
+        
+        html += `<li style="margin-bottom: 8px; border-bottom: 1px dashed #ecf0f1; padding-bottom: 5px;">
+            <strong>${suomiPvm}</strong>: ${rivi.toimenpide} <br>
+            <span style="color: #7f8c8d; font-size: 11px;">
+                Osa: ${rivi.vaihdettu_osa || '-'} | Tekijä: ${rivi.tekija || '-'}
+            </span>
+        </li>`;
+    });
+    html += `</ul>`;
+    
+    historiaLista.innerHTML = html;
+}
+
+// 4. Funktio, joka tallentaa uuden työn Supabaseen
+async function tallennaKaapinOsanHuolto() {
+    const pvm = document.getElementById("kh-pvm").value;
+    const toimenpide = document.getElementById("kh-toimenpide").value;
+    const osa = document.getElementById("kh-osa").value;
+    const tekija = document.getElementById("kh-tekija").value;
+
+    if (!pvm || !toimenpide) {
+        alert("Päivämäärä ja toimenpide ovat pakollisia kenttiä!");
+        return;
+    }
+
+    // Tallennetaan tietokantaan
+    const { error } = await supabaseclient
+        .from('kaapin_huoltohistoria')
+        .insert([{
+            kaappi: aktiivinenKaappi,
+            positio: aktiivinenOsaNumero,
+            pvm: pvm,
+            toimenpide: toimenpide,
+            vaihdettu_osa: osa,
+            tekija: tekija
+        }]);
+
+    if (error) {
+        console.error("Tallennus epäonnistui:", error);
+        alert("Virhe tallennettaessa!");
+    } else {
+        // Tyhjennetään lomake ja piilotetaan se
+        document.getElementById("kh-toimenpide").value = "";
+        document.getElementById("kh-osa").value = "";
+        document.getElementById("kaappi-huolto-lomake").style.display = "none";
+        
+        // Päivitetään historia-lista, jotta uusi merkintä näkyy heti!
+        paivitaKaapinOsanHistoria();
+    }
 }

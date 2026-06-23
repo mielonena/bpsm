@@ -97,9 +97,66 @@ function avaaTiedot(id) {
     if (tiedot.ryhma) {
         otsikkoHTML += ` <span style="font-size: 14px; background: #ecf0f1; color: #7f8c8d; padding: 4px 10px; border-radius: 12px; margin-left: 10px; vertical-align: middle; font-weight: normal;">Ryhmä: ${tiedot.ryhma}</span>`;
     }
-    document.getElementById("kuljettimenNimi").innerHTML = otsikkoHTML;
+    
+    document.getElementById("tiedotIkkuna").style.display = "flex";
 
-    const varaosaLisaaBtn = document.querySelector(".nappi-lisaa[onclick='lisaaUusiVaraosa()']");
+    const osaTiedotPaneeli = document.getElementById("kaappi-osan-tiedot");
+    if (osaTiedotPaneeli) osaTiedotPaneeli.style.display = "none";
+
+    const visuaalinenAlue = document.getElementById("visuaalinen-kaappi-alue");
+    const sdKaappiSvg = document.getElementById("sd-kaappi-svg");
+    
+    if (visuaalinenAlue && sdKaappiSvg) {
+        // Tarkistetaan, näytetäänkö ylipäätään kaappikuvaa
+        if (id.includes("SD") || id.includes("A011") || id.includes("A012")) {
+            visuaalinenAlue.style.display = "block";
+            sdKaappiSvg.style.display = "block";
+            
+            const tyyppitiedot = document.getElementById("kaappi-tyyppitiedot");
+            if (tyyppitiedot) {
+                tyyppitiedot.innerHTML = `<strong>Aktiivinen kaappi:</strong> ${id}`;
+            }
+            
+            // REITITYS: Valitaan oikea piirtofunktio!
+            // Tarkistetaan A011 ja A012 ensin, koska niiden nimessä voi olla myös SD.
+            if (id.includes("A011") || id.includes("A012")) {
+                generoiA011_A012KaappiSVG(id);
+            } else if (id.includes("SD")) {
+                generoiSDKaappiSVG(id);
+            }
+            
+        } else {
+            visuaalinenAlue.style.display = "none";
+        }
+    }
+
+    document.getElementById("kuljettimenNimi").innerHTML = otsikkoHTML;
+// -- UUSI VISUAALINEN KAAPPINÄKYMÄ --
+    const visuaalinenKaappi = document.getElementById("visuaalinen-kaappi-alue");
+    const normaaliNakyma = document.getElementById("normaali-laitetiedot"); // Haetaan uusi piilotettava alue
+
+    if (visuaalinenKaappi) {
+        // Tarkistetaan onko avattu laite jokin SD-kaapeista
+        if (id.includes(".SD001") || id.includes(".SD002") || id.includes(".SD003") || id.includes(".SD004")) {
+            
+            // 1. Näytetään kaappi
+            visuaalinenKaappi.style.display = "block";
+            
+            // 2. Piilotetaan perinteiset historiat, excel-napit ja vikatiedot!
+            if (normaaliNakyma) normaaliNakyma.style.display = "none";
+            
+            document.getElementById("kaappi-tyyppitiedot").innerHTML = 
+                `<strong>Varaosanumero:</strong> (Määritä) &nbsp;|&nbsp; <strong>Tyyppi:</strong> SD-Sähkökaappi &nbsp;|&nbsp; <strong>Nimi:</strong> ${id}`;
+                
+        } else {
+            // Jos kyseessä on tavallinen kuljetin:
+            // 1. Piilotetaan kaappi
+            visuaalinenKaappi.style.display = "none";
+            
+            // 2. Palautetaan näkyviin historia ja vikatiedot
+            if (normaaliNakyma) normaaliNakyma.style.display = "block";
+        }
+    }    const varaosaLisaaBtn = document.querySelector(".nappi-lisaa[onclick='lisaaUusiVaraosa()']");
     if(varaosaLisaaBtn) {
         varaosaLisaaBtn.style.display = onkoAdmin ? "inline-block" : "none";
     }
@@ -293,4 +350,12 @@ async function poistaValittuTyo() {
             alert("Tietokantavirhe poistossa: " + err.message);
         }
     }
+}
+function kirjaaKaapinOsaan(osaNimi) {
+    naytaLisaysLomake();
+    const sijaintiKentta = document.getElementById("uusiSijainti");
+    if (sijaintiKentta) {
+        sijaintiKentta.value = osaNimi;
+    }
+    document.getElementById("lisaysLomake").scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

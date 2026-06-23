@@ -14,6 +14,8 @@ let vikaSorttaus = "kl_asc";
 let vikaFiltteri = "Kaikki";
 let vikaHakuTeksti = ""; 
 let historiaHakuTeksti = ""; 
+let aktiivinenKaappi = "";
+let aktiivinenOsaNumero = "";
 
 let varaosatData = {};
 let huoltoHistoria = {};
