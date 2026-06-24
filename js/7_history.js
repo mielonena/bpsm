@@ -108,7 +108,7 @@ function avaaTiedot(id) {
     
     if (visuaalinenAlue && sdKaappiSvg) {
         // Tarkistetaan, näytetäänkö ylipäätään kaappikuvaa
-        if (id.includes("SD") || id.includes("A011") || id.includes("A012")) {
+        if (id.includes("SD") || id.includes("A011") || id.includes("A012") || id.includes("CC")) {
             visuaalinenAlue.style.display = "block";
             sdKaappiSvg.style.display = "block";
             
@@ -123,6 +123,8 @@ function avaaTiedot(id) {
                 generoiA011_A012KaappiSVG(id);
             } else if (id.includes("SD")) {
                 generoiSDKaappiSVG(id);
+            } else if (id.includes("CC")){
+                generoiSO01_SO02KaappiSVG(id);
             }
             
         } else {
@@ -137,7 +139,7 @@ function avaaTiedot(id) {
 
     if (visuaalinenKaappi) {
         // Tarkistetaan onko avattu laite jokin SD-kaapeista
-        if (id.includes(".SD001") || id.includes(".SD002") || id.includes(".SD003") || id.includes(".SD004")) {
+        if (id.includes(".SD001") || id.includes(".SD002") || id.includes(".SD003") || id.includes(".SD004") || id.includes("CC")) {
             
             // 1. Näytetään kaappi
             visuaalinenKaappi.style.display = "block";
