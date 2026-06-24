@@ -72,6 +72,7 @@ async function naytaKaapinOsanTiedot(kaapinNimi, osaNumero) {
     document.getElementById("ko-varaosanro").innerText = "Ladataan...";
     document.getElementById("ko-tuotenro").innerText = "Ladataan...";
     document.getElementById("ko-hyllypaikka").innerText = "Ladataan...";
+    document.getElementById("ko-info").innerText = "Ladataan...";
 
     try {
         // 1. HAETAAN VARAOSATIEDOT YHTEISESTÄ POHJASTA (esim. "SD-kaappi")
@@ -90,12 +91,13 @@ async function naytaKaapinOsanTiedot(kaapinNimi, osaNumero) {
             document.getElementById("ko-varaosanro").innerText = "-";
             document.getElementById("ko-tuotenro").innerText = "-";
             document.getElementById("ko-hyllypaikka").innerText = "-";
+	    document.getElementById("ko-info").innerText = "-";
         } else {
             document.getElementById("ko-nimi").innerText = data.nimi || "-";
             document.getElementById("ko-varaosanro").innerText = data.varaosanumero || "-";
             document.getElementById("ko-tuotenro").innerText = data.tuotenumero || "-";
             document.getElementById("ko-hyllypaikka").innerText = data.hyllypaikka || "-";
-        }
+            document.getElementById("ko-info").innerText = data.info || "-";        }
     } catch (err) {
         console.error("Virhe:", err);
         document.getElementById("ko-nimi").innerText = "Yhteysvirhe";

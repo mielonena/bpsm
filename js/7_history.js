@@ -146,7 +146,7 @@ function avaaTiedot(id) {
             if (normaaliNakyma) normaaliNakyma.style.display = "none";
             
             document.getElementById("kaappi-tyyppitiedot").innerHTML = 
-                `<strong>Varaosanumero:</strong> (Määritä) &nbsp;|&nbsp; <strong>Tyyppi:</strong> SD-Sähkökaappi &nbsp;|&nbsp; <strong>Nimi:</strong> ${id}`;
+                `&nbsp; <strong>Tyyppi:</strong> SD-Sähkökaappi &nbsp;|&nbsp; <strong>Nimi:</strong> ${id}`;
                 
         } else {
             // Jos kyseessä on tavallinen kuljetin:

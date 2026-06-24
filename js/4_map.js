@@ -245,20 +245,19 @@ function luoKaappi(x, y, w, h, nimi, otsikko = nimi, tyyppi = "normaali") {
 
     ryhma.innerHTML = html;
 }
-// 1. LISÄTTY PARAMETRI: kaapinNimi
 function generoiSDKaappiSVG(kaapinNimi) {
     const svgAlue = document.getElementById("sd-kaappi-svg");
     if (!svgAlue) return;
 
     let html = "";
 
-    function luoOsa(x, y, w, h, numero) {
-        // 2. KORJATTU LINKITYS: 'SD-kaappi' on vaihdettu dynaamiseen muuttujaan '${kaapinNimi}'
+    function luoOsa(x, y, w, h, numero, koko="16px", kulma=0) {
+        let transform = kulma ? `transform="rotate(${kulma} ${x + w/2} ${y + h/2})"` : "";
         html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
                     onmouseover="this.querySelector('rect').setAttribute('fill', '#3498db'); this.querySelector('text').setAttribute('fill', '#ffffff');" 
                     onmouseout="this.querySelector('rect').setAttribute('fill', '#ffffff'); this.querySelector('text').setAttribute('fill', '#2c3e50');">
             <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff" stroke="#2c3e50" stroke-width="1.5" />
-            <text x="${x + w/2}" y="${y + h/2}" fill="#2c3e50" font-size="16px" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none">${numero}</text>
+            <text x="${x + w/2}" y="${y + h/2}" fill="#2c3e50" font-size="${koko}" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none" ${transform}>${numero}</text>
         </g>`;
     }
 
@@ -299,7 +298,20 @@ function generoiSDKaappiSVG(kaapinNimi) {
     luoOsa(120, 250, 30, 90, "16"); luoOsa(150, 250, 30, 90, "17");
     luoOsa(180, 250, 30, 90, "18"); luoOsa(210, 250, 30, 90, "19");
     luoOsa(320, 260, 60, 70, "20");
-    luoOsa(550, 240, 180, 100, "21");
+    
+    // Kapeat moduulit (21) käännettynä (-90 astetta)
+    luoOsa(500.0, 240, 19.17, 100, "21", "12px", -90);
+    luoOsa(519.17, 240, 19.17, 100, "21.1", "12px", -90);
+    luoOsa(538.33, 240, 19.17, 100, "21.2", "12px", -90);
+    luoOsa(557.50, 240, 19.17, 100, "21.2", "12px", -90);
+    luoOsa(576.67, 240, 19.17, 100, "21.2", "12px", -90);
+    luoOsa(595.83, 240, 19.17, 100, "21.2", "12px", -90);
+    luoOsa(615.00, 240, 19.17, 100, "21.2", "12px", -90);
+    luoOsa(634.17, 240, 19.17, 100, "21.2", "12px", -90);
+    luoOsa(653.33, 240, 19.17, 100, "21.2", "12px", -90);
+    luoOsa(672.50, 240, 19.17, 100, "21.1", "12px", -90);
+    luoOsa(691.67, 240, 19.17, 100, "21.3", "12px", -90);
+    luoOsa(710.83, 240, 19.17, 100, "21.3", "12px", -90);
 
     luoRakenne(30, 360, 740, 30, "LKG 75050");
 
@@ -342,9 +354,31 @@ function generoiSDKaappiSVG(kaapinNimi) {
     luoTeksti(780, 600, "LKG 75037", "14px", -90);
     luoTeksti(780, 300, "FOR BUS-CABLES ONLY!", "14px", -90);
 
+    // ========================================== //
+    // === OVI JA SEN KOMPONENTIT (Oikea reuna) === //
+    // ========================================== //
+    
+    html += `<rect x="820" y="30" width="160" height="200" fill="#f8f9f9" stroke="#bdc3c7" stroke-width="2" rx="5" />`;
+    luoTeksti(900, 60, "OVI", "16px");
+
+    function luoPyoreaOsa(cx, cy, r, vari, numero) {
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('circle').setAttribute('stroke', '#3498db'); this.querySelector('circle').setAttribute('stroke-width', '4');" 
+                    onmouseout="this.querySelector('circle').setAttribute('stroke', '#2c3e50'); this.querySelector('circle').setAttribute('stroke-width', '1.5');">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="${vari}" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${cx}" y="${cy + r + 15}" fill="#2c3e50" font-size="12px" font-weight="bold" font-family="Arial" text-anchor="middle" pointer-events="none">${numero}</text>
+        </g>`;
+    }
+    luoRakenne(830, 105, 30, 45,"");
+    luoPyoreaOsa(845, 120, 12, "#e74c3c", "45"); // Punainen
+    luoPyoreaOsa(882, 120, 12, "#fcf751", "46"); // Keltainen
+    luoPyoreaOsa(918, 120, 12, "#2ecc71", "47"); // Vihreä
+    luoPyoreaOsa(955, 120, 12, "#3498db", "48"); // Sininen
+    luoPyoreaOsa(900, 180, 12, "#f1c40f", "49"); // Keltainen
+
+    // --- TULOSTUS HTML:ÄÄN ---
     svgAlue.innerHTML = html;
-}
-// YHTEINEN PIIRUSTUS A011 ja A012 SISÄKAAPEILLE
+}// YHTEINEN PIIRUSTUS A011 ja A012 SISÄKAAPEILLE
 function generoiA011_A012KaappiSVG(kaapinNimi) {
     const svgAlue = document.getElementById("sd-kaappi-svg");
     if (!svgAlue) return;
