@@ -847,3 +847,141 @@ function generoiCS401KaappiSVG(kaapinNimi) {
 
     svgAlue.innerHTML = html;
 }
+// ========================================== //
+// === UUSI PÄÄKESKUS (OU.MAIN)           === //
+// ========================================== //
+function generoiOUMAIN_KaappiSVG(kaapinNimi) {
+    const svgAlue = document.getElementById("sd-kaappi-svg");
+    if (!svgAlue) return;
+
+    let html = "";
+
+    function luoOsa(x, y, w, h, numero, koko="16px", kulma=0) {
+        let transform = kulma ? `transform="rotate(${kulma} ${x + w/2} ${y + h/2})"` : "";
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('rect').setAttribute('fill', '#3498db'); this.querySelector('text').setAttribute('fill', '#ffffff');" 
+                    onmouseout="this.querySelector('rect').setAttribute('fill', '#ffffff'); this.querySelector('text').setAttribute('fill', '#2c3e50');">
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${x + w/2}" y="${y + h/2}" fill="#2c3e50" font-size="${koko}" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none" ${transform}>${numero}</text>
+        </g>`;
+    }
+
+    function luoRakenne(x, y, w, h, teksti = "") {
+        if (w > 0 && h > 0) {
+            html += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#95a5a6" stroke-width="1" />`;
+        }
+        if (teksti) {
+            html += `<text x="${x + w/2}" y="${y + h/2}" fill="#7f8c8d" font-size="14px" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none">${teksti}</text>`;
+        }
+    }
+
+    function luoTeksti(x, y, teksti, koko="14px", kulma=0) {
+        let transform = kulma ? `transform="rotate(${kulma} ${x} ${y})"` : "";
+        html += `<text x="${x}" y="${y}" fill="#34495e" font-size="${koko}" font-family="Arial" font-weight="bold" text-anchor="middle" dominant-baseline="central" ${transform} pointer-events="none">${teksti}</text>`;
+    }
+
+    // --- Tausta ja yläpalkki ---
+    html += `<rect x="10" y="10" width="780" height="920" fill="#ffffff" stroke="#2c3e50" stroke-width="2" />`;
+    
+    luoRakenne(150, 10, 600, 20);
+    luoOsa(400, 10, 80, 20, "1", "12px");
+    luoOsa(480, 10, 30, 20, "2", "12px");
+
+    // --- Oikea yläkulma: C-RAIL ja tekstit ---
+    luoRakenne(500, 50, 250, 15);
+    luoTeksti(625, 80, "C-RAIL FOR CABLE GLAND", "18px");
+    luoTeksti(625, 105, "DIMENSIONED FOR 2x(4x185/95MM²)", "16px");
+
+    html += `<rect x="470" y="130" width="300" height="600" fill="none" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="10,5" />`;
+    
+    // Pitkä ohjeteksti oikealla
+    luoTeksti(620, 150, "EACH PHASE 2x M12 DRILLED HOLE,", "12px");
+    luoTeksti(620, 165, "BOLT MOUNTED FROM BEHIND,", "12px");
+    luoTeksti(620, 180, "COPPER-PLATE FOR BAR SPACER", "12px");
+    luoTeksti(620, 195, "MOUNTED IN THE FRONT AT THE BAR", "12px");
+
+    // --- Vasen pystylogo (LKG 75050) ---
+    luoRakenne(30, 50, 30, 550);
+    luoTeksti(45, 325, "LKG 75050", "12px", -90);
+
+    // --- Keski-vasen LKG moduulialue ---
+    luoRakenne(80, 400, 300, 20, "LKG 75050");
+    luoRakenne(80, 490, 300, 20, "LKG 75050");
+    luoRakenne(80, 600, 300, 20, "LKG 75050");
+    luoRakenne(360, 420, 20, 180);
+    luoTeksti(370, 510, "LKG 75050", "12px", -90);
+
+    // Osat 3-7 ja 15
+    for(let i=0; i<5; i++) luoOsa(100 + i*30, 435, 30, 45, `${3+i}`);
+    luoOsa(300, 440, 40, 35, "15");
+
+    // Osat 8 ja 14
+    luoOsa(110, 525, 60, 60, "8");
+    luoOsa(300, 535, 40, 40, "14");
+
+    // --- Alaosan vaakakiskot (L1, L2, L3) ---
+    html += `<rect x="380" y="625" width="10" height="90" fill="#ecf0f1" stroke="#bdc3c7" />`;
+    html += `<rect x="730" y="625" width="10" height="90" fill="#ecf0f1" stroke="#bdc3c7" />`;
+
+    let kiskoY = [640, 665, 690];
+    for (let i = 0; i < 3; i++) {
+        html += `<rect x="20" y="${kiskoY[i]}" width="750" height="12" fill="#e67e22" stroke="#d35400" />`;
+        luoTeksti(180, kiskoY[i] - 10, "CU 30x10", "12px");
+    }
+    luoTeksti(785, kiskoY[0] + 6, "L1", "12px");
+    luoTeksti(785, kiskoY[1] + 6, "L2", "12px");
+    luoTeksti(785, kiskoY[2] + 6, "L3", "12px");
+
+    // --- Oikea alue: Päävirtakiskot ja kytkin (9) ---
+    // Yläkiskot (vaaka)
+    html += `<rect x="520" y="240" width="200" height="10" fill="#e67e22" stroke="#d35400" />`;
+    html += `<rect x="520" y="265" width="200" height="10" fill="#e67e22" stroke="#d35400" />`;
+    html += `<rect x="520" y="290" width="200" height="10" fill="#e67e22" stroke="#d35400" />`;
+
+    // Kolmiomainen johdotus (graafinen viitteistys)
+    html += `<polyline points="620,210 530,295" fill="none" stroke="#2c3e50" stroke-width="2" />`;
+    html += `<polyline points="620,210 620,245" fill="none" stroke="#2c3e50" stroke-width="2" />`;
+    html += `<polyline points="620,210 710,295" fill="none" stroke="#2c3e50" stroke-width="2" />`;
+
+    // Pystykiskot ja tekstit (yläpuoli)
+    html += `<rect x="550" y="250" width="15" height="150" fill="#e67e22" stroke="#d35400" />`;
+    html += `<rect x="612" y="275" width="15" height="125" fill="#e67e22" stroke="#d35400" />`;
+    html += `<rect x="675" y="300" width="15" height="100" fill="#e67e22" stroke="#d35400" />`;
+    
+    luoTeksti(580, 340, "400mm", "12px", -90);
+    luoTeksti(642, 340, "340mm", "12px", -90);
+    luoTeksti(705, 340, "280mm", "12px", -90);
+    luoTeksti(720, 380, "CU 30x10", "12px");
+
+    // Pääkomponentti 9
+    luoOsa(530, 400, 180, 100, "9", "24px");
+
+    // Pystykiskot ja tekstit (alapuoli)
+    html += `<rect x="550" y="500" width="15" height="140" fill="#e67e22" stroke="#d35400" />`;
+    html += `<rect x="612" y="500" width="15" height="165" fill="#e67e22" stroke="#d35400" />`;
+    html += `<rect x="675" y="500" width="15" height="190" fill="#e67e22" stroke="#d35400" />`;
+    
+    luoTeksti(540, 590, "350mm", "12px", -90);
+    luoTeksti(602, 590, "410mm", "12px", -90);
+    luoTeksti(665, 590, "470mm", "12px", -90);
+
+    // Osat 11, 12, 13
+    luoOsa(537, 520, 40, 30, "11");
+    luoOsa(600, 550, 40, 30, "12");
+    luoOsa(662, 520, 40, 30, "13");
+
+    // --- Vasen alakulma (LKG 75037) ---
+    luoRakenne(50, 750, 150, 20, "LKG 75037");
+    luoRakenne(20, 750, 25, 90);
+    luoTeksti(32, 795, "LKG 75037", "11px", -90);
+    luoOsa(60, 785, 25, 30, "10");
+    luoRakenne(50, 820, 150, 20, "LKG 75037");
+
+    // --- Alaosa (C-PROFIL ja katkoviiva) ---
+    luoRakenne(30, 860, 740, 15, "C-PROFIL");
+    html += `<line x1="10" y1="900" x2="790" y2="900" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="10,5" />`;
+    html += `<line x1="10" y1="930" x2="790" y2="930" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="10,5" />`;
+    luoTeksti(400, 915, "LKG 75050 FOR BUS CABLE IS TO INSTALL AT THE REAR BASE!", "14px");
+
+    svgAlue.innerHTML = html;
+}
