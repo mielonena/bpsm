@@ -189,7 +189,7 @@ function luoKaappi(x, y, w, h, nimi, otsikko = nimi, tyyppi = "normaali") {
 }
     // --- RIVI 1: SO01 (Y = 50) ---
     luoKaappi(50, 50, 120, 200, "SO01.PT001", "SO01.PT001", "iso");
-    luoKaappi(190, 50, 120, 200, "SO01.CC01", "SO01.CC01", "iso");
+    luoKaappi(190, 50, 120, 200, "SO01.CC001", "SO01.CC001", "iso");
     
     let sdX = 330;
     for (let i = 1; i <= 4; i++) {
@@ -210,7 +210,7 @@ function luoKaappi(x, y, w, h, nimi, otsikko = nimi, tyyppi = "normaali") {
     });
 
     // --- RIVI 2: SO02 (Y = 350) ---
-    luoKaappi(50, 350, 120, 200, "SO02.CC01", "SO02.CC01", "iso");
+    luoKaappi(50, 350, 120, 200, "SO02.CC001", "SO02.CC001", "iso");
     
     sdX = 190;
     for (let i = 1; i <= 4; i++) {
@@ -229,13 +229,13 @@ function luoKaappi(x, y, w, h, nimi, otsikko = nimi, tyyppi = "normaali") {
     });
 
     // --- RIVI 3: OU01 (Y = 650) ---
-    luoKaappi(50, 650, 120, 200, "OU01", "OU01", "iso");
+    luoKaappi(50, 650, 120, 200, "OU01.CC001", "OU01.CC001", "iso");
     
     luoKaappi(190, 750, 120, 100, "OU01.ED001", "OU01.ED001", "matala");
     luoKaappi(330, 750, 120, 100, "OU01.ED002", "OU01.ED002", "matala");
 
     adX = 470;
-    const ou01_smalls = ["DI011", "ID012", "AD001-A011", "AD002-A011", "AD003-A011", "AD004-A011"];
+    const ou01_smalls = ["DI011", "DI012", "AD001-A011", "AD002-A011", "AD003-A011", "AD004-A011"];
     ou01_smalls.forEach(sm => {
         let id = `OU01.${sm}`;
         let otsikko = sm.replace("-A011", ""); // Lyhennetty näkymä
@@ -567,8 +567,11 @@ function generoiA011_A012KaappiSVG(kaapinNimi) {
     svgAlue.innerHTML = html;
 }
 
-// UUSI PÄÄOHJAUSKESKUS (CC001/PT001)
-function generoiSO01_SO02KaappiSVG(kaapinNimi) {
+// ========================================== //
+// === OU01.CC001      === //
+// ========================================== //
+
+function generoiOU01KaappiSVG(kaapinNimi) {
     const svgAlue = document.getElementById("sd-kaappi-svg");
     if (!svgAlue) return;
 
@@ -671,8 +674,8 @@ function generoiSO01_SO02KaappiSVG(kaapinNimi) {
 
     luoRakenne(410, 400, 360, 20, "LKG 75050");
     
-    // Riviliittimet 30-43 (14 kpl, käännetty pystyyn)
-    for (let i = 0; i < 14; i++) {
+    // Riviliittimet 30-44 (15 kpl, käännetty pystyyn)
+    for (let i = 0; i < 15; i++) {
         luoOsa(430 + i * 20, 440, 20, 45, `${30 + i}`, "11px", -90);
     }
 
@@ -691,8 +694,6 @@ function generoiSO01_SO02KaappiSVG(kaapinNimi) {
         luoTeksti(120, yPos + 6, "CU 30x10", "12px");
     }
 
-    // "*1" teksti
-    luoTeksti(90, 720, "*1", "18px");
 
     // Terminaali-lohkon kehykset
     luoRakenne(50, 740, 480, 20, "LKG 75037");
@@ -721,9 +722,9 @@ function generoiSO01_SO02KaappiSVG(kaapinNimi) {
     svgAlue.innerHTML = html;
 }
 // ========================================== //
-// === UUSI CS401 KAAPPI (cs401.jpg)      === //
+// === UUSI SO01.CC001 ja SO02.CC001      === //
 // ========================================== //
-function generoiCS401KaappiSVG(kaapinNimi) {
+function generoiSO01_SO02KaappiSVG(kaapinNimi) {
     const svgAlue = document.getElementById("sd-kaappi-svg");
     if (!svgAlue) return;
 
@@ -801,7 +802,6 @@ function generoiCS401KaappiSVG(kaapinNimi) {
     luoRakenne(410, 400, 360, 20, "LKG 75050");
 
     // --- Alaosa (Kiskot ja massiiviset moduulit) ---
-    luoTeksti(400, 540, "*1", "18px");
 
     // Kiskojen kiinnikkeet
     html += `<rect x="40" y="560" width="15" height="100" fill="#ecf0f1" stroke="#bdc3c7" />`;
@@ -825,9 +825,7 @@ function generoiCS401KaappiSVG(kaapinNimi) {
     html += `<rect x="580" y="565" width="70" height="90" fill="none" stroke="#2c3e50" stroke-width="2" stroke-dasharray="5,5" />`;
     html += `<rect x="660" y="565" width="70" height="90" fill="none" stroke="#2c3e50" stroke-width="2" stroke-dasharray="5,5" />`;
 
-    luoTeksti(90, 720, "*2", "18px");
-
-    // Alimmat riviliittimet LKG 75037 sisällä
+     // Alimmat riviliittimet LKG 75037 sisällä
     luoRakenne(50, 740, 310, 20, "LKG 75037");
     luoRakenne(20, 740, 20, 85);
     luoTeksti(30, 782, "LKG 75037", "11px", -90);
@@ -848,9 +846,9 @@ function generoiCS401KaappiSVG(kaapinNimi) {
     svgAlue.innerHTML = html;
 }
 // ========================================== //
-// === UUSI PÄÄKESKUS (OU.MAIN)           === //
+// === UUSI PÄÄKESKUS (SO01.PT001)           === //
 // ========================================== //
-function generoiOUMAIN_KaappiSVG(kaapinNimi) {
+function generoiSO01PT001KaappiSVG(kaapinNimi) {
     const svgAlue = document.getElementById("sd-kaappi-svg");
     if (!svgAlue) return;
 
@@ -983,5 +981,73 @@ function generoiOUMAIN_KaappiSVG(kaapinNimi) {
     html += `<line x1="10" y1="930" x2="790" y2="930" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="10,5" />`;
     luoTeksti(400, 915, "LKG 75050 FOR BUS CABLE IS TO INSTALL AT THE REAR BASE!", "14px");
 
+    svgAlue.innerHTML = html;
+}
+// ========================================== //
+// === UUSI ALAKESKUS (OU01.ED)           === //
+// ========================================== //
+function generoiOU01EDKaappiSVG(kaapinNimi) {
+    const svgAlue = document.getElementById("sd-kaappi-svg");
+    if (!svgAlue) return;
+
+    let html = "";
+
+    function luoOsa(x, y, w, h, numero, koko="16px", kulma=0) {
+        let transform = kulma ? `transform="rotate(${kulma} ${x + w/2} ${y + h/2})"` : "";
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('rect').setAttribute('fill', '#3498db'); this.querySelector('text').setAttribute('fill', '#ffffff');" 
+                    onmouseout="this.querySelector('rect').setAttribute('fill', '#ffffff'); this.querySelector('text').setAttribute('fill', '#2c3e50');">
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${x + w/2}" y="${y + h/2}" fill="#2c3e50" font-size="${koko}" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none" ${transform}>${numero}</text>
+        </g>`;
+    }
+
+    function luoRakenne(x, y, w, h, teksti = "") {
+        if (w > 0 && h > 0) {
+            html += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#95a5a6" stroke-width="1" />`;
+        }
+        if (teksti) {
+            html += `<text x="${x + w/2}" y="${y + h/2}" fill="#7f8c8d" font-size="14px" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none">${teksti}</text>`;
+        }
+    }
+
+    // --- Tausta ja ulkoreunat (Matalampi malli, korkeus 500) ---
+    html += `<rect x="10" y="10" width="780" height="480" fill="#ffffff" stroke="#2c3e50" stroke-width="2" />`;
+    
+    // ========================================== //
+    // === YLÄOSAN KOMPONENTIT                === //
+    // ========================================== //
+    
+    // Osa 2 (Hieman kapeampi ja lyhyempi)
+    luoOsa(40, 60, 40, 120, "2");
+    
+    // Osa 3 (Isompi laatikko)
+    luoOsa(100, 40, 70, 160, "3");
+
+    // Osat 4 ja 5 (Keskellä, leveämmät moduulit)
+    luoOsa(240, 40, 60, 160, "4");
+    luoOsa(300, 40, 60, 160, "5");
+
+    // Osat 6-12 (Kapeat riviliittimet / moduulit)
+    for (let i = 0; i < 7; i++) {
+        luoOsa(360 + (i * 35), 40, 35, 160, `${6 + i}`);
+    }
+
+    // ========================================== //
+    // === KESKIKISKO / RAKENNE               === //
+    // ========================================== //
+    luoRakenne(10, 240, 780, 40);
+
+    // ========================================== //
+    // === ALAOSAN KOMPONENTIT                === //
+    // ========================================== //
+    
+    // Osa 13 (Kapea pystylaatikko)
+    luoOsa(40, 320, 40, 120, "13");
+
+    // Osa 14 (Pitkä vaakalaatikko)
+    luoOsa(100, 320, 505, 120, "14", "24px");
+
+    // Piirretään ruudulle
     svgAlue.innerHTML = html;
 }

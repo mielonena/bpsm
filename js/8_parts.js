@@ -58,9 +58,20 @@ async function naytaKaapinOsanTiedot(kaapinNimi, osaNumero) {
     
     // MÄÄRITETÄÄN YHTEINEN POHJA VARAOSILLE
     // Jos klikatun kaapin nimessä on "SD", haetaan osat "SD-kaappi" -nimisestä mallipohjasta
-    let kaappiTyyppi = kaapinNimi;
-    if (kaapinNimi.includes("SD")) {
+let kaappiTyyppi = kaapinNimi;
+    
+    if (kaapinNimi.includes("A011") || kaapinNimi.includes("A012")) {
+        kaappiTyyppi = "A011-A012-kaappi";
+    } else if (kaapinNimi.includes("SD")) {
         kaappiTyyppi = "SD-kaappi"; 
+    } else if (kaapinNimi.includes("OU01.CC")) {
+        kaappiTyyppi = "Luisu";
+    } else if (kaapinNimi.includes("PT")) {
+        kaappiTyyppi = "Main"; 
+    } else if (kaapinNimi.includes("CC")) {
+        kaappiTyyppi = "TopBot"; // Supabasen tunniste
+    } else if (kaapinNimi.includes("OU01.ED")) {
+        kaappiTyyppi = "HS";
     }
 
     const paneeli = document.getElementById("kaappi-osan-tiedot");

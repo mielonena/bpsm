@@ -108,7 +108,7 @@ function avaaTiedot(id) {
     
     if (visuaalinenAlue && sdKaappiSvg) {
         // Tarkistetaan, näytetäänkö ylipäätään kaappikuvaa
-        if (id.includes("SD") || id.includes("A011") || id.includes("A012") || id.includes("CC")) {
+        if (id.includes("SD") || id.includes("A011") || id.includes("A012") || id.includes("CC") || id.includes("PT") || id.includes("OU01.CC") || id.includes("ED")) {
             visuaalinenAlue.style.display = "block";
             sdKaappiSvg.style.display = "block";
             
@@ -120,14 +120,27 @@ function avaaTiedot(id) {
             // REITITYS: Valitaan oikea piirtofunktio!
             // Tarkistetaan A011 ja A012 ensin, koska niiden nimessä voi olla myös SD.
             if (id.includes("A011") || id.includes("A012")) {
-                generoiA011_A012KaappiSVG(id);
+console.log("-> Piirretään A011/A012");                
+		generoiA011_A012KaappiSVG(id);
             } else if (id.includes("SD")) {
+console.log("-> Piirretään SD-kaappi");
                 generoiSDKaappiSVG(id);
-            } else if (id.includes("CC")){
-                generoiSO01_SO02KaappiSVG(id);
+            } else if (id.includes("OU01.CC")){
+console.log("-> Piirretään OU01.CC");
+                generoiOU01KaappiSVG(id);
+            } else if (id.includes("PT")){
+console.log("-> Piirretään PT");
+                generoiSO01PT001KaappiSVG(id);
+	    } else if (id.includes("CC")){
+console.log("-> Piirretään CC");
+	  	generoiSO01_SO02KaappiSVG(id);
+            } else if (id.includes("ED")){
+console.log("-> Piirretään ED (OU01.ED)");
+                generoiOU01EDKaappiSVG(id);
             }
             
         } else {
+console.log("-> Reititys ei löytänyt sopivaa funktiota ID:lle", id);
             visuaalinenAlue.style.display = "none";
         }
     }
@@ -139,7 +152,7 @@ function avaaTiedot(id) {
 
     if (visuaalinenKaappi) {
         // Tarkistetaan onko avattu laite jokin SD-kaapeista
-        if (id.includes(".SD001") || id.includes(".SD002") || id.includes(".SD003") || id.includes(".SD004") || id.includes("CC")) {
+        if (id.includes(".SD001") || id.includes(".SD002") || id.includes(".SD003") || id.includes(".SD004") || id.includes("CC") || id.includes("PT") || id.includes("OU01.CC") || id.includes("ED")) {
             
             // 1. Näytetään kaappi
             visuaalinenKaappi.style.display = "block";
