@@ -57,22 +57,14 @@ async function naytaKaapinOsanTiedot(kaapinNimi, osaNumero) {
     console.log(`Klikattu kaappia: "${kaapinNimi}", Osa: "${osaNumero}"`);
     
     // MÄÄRITETÄÄN YHTEINEN POHJA VARAOSILLE
-    // Jos klikatun kaapin nimessä on "SD", haetaan osat "SD-kaappi" -nimisestä mallipohjasta
-let kaappiTyyppi = kaapinNimi;
+    let kaappiTyyppi = kaapinNimi;
     
-    if (kaapinNimi.includes("A011") || kaapinNimi.includes("A012")) {
-        kaappiTyyppi = "A011-A012-kaappi";
-    } else if (kaapinNimi.includes("SD")) {
-        kaappiTyyppi = "SD-kaappi"; 
-    } else if (kaapinNimi.includes("OU01.CC")) {
-        kaappiTyyppi = "Luisu";
-    } else if (kaapinNimi.includes("PT")) {
-        kaappiTyyppi = "Main"; 
-    } else if (kaapinNimi.includes("CC")) {
-        kaappiTyyppi = "TopBot"; // Supabasen tunniste
-    } else if (kaapinNimi.includes("OU01.ED")) {
-        kaappiTyyppi = "HS";
-    }
+    if (kaapinNimi.includes("A011") || kaapinNimi.includes("A012")) kaappiTyyppi = "A011-A012-kaappi";
+    else if (kaapinNimi.includes("SD")) kaappiTyyppi = "SD-kaappi"; 
+    else if (kaapinNimi.includes("OU01.CC")) kaappiTyyppi = "Luisu";
+    else if (kaapinNimi.includes("PT")) kaappiTyyppi = "Main"; 
+    else if (kaapinNimi.includes("CC")) kaappiTyyppi = "TopBot"; 
+    else if (kaapinNimi.includes("OU01.ED")) kaappiTyyppi = "HS";
 
     const paneeli = document.getElementById("kaappi-osan-tiedot");
     if (!paneeli) return;
@@ -85,12 +77,19 @@ let kaappiTyyppi = kaapinNimi;
     document.getElementById("ko-hyllypaikka").innerText = "Ladataan...";
     document.getElementById("ko-info").innerText = "Ladataan...";
 
+    // UUSI: Piilotetaan erillinen kuva-alue aina kun uutta osaa klikataan
+    const erillinenKuvaAlue = document.getElementById("erillinen-kuva-alue");
+    const kuvaElementti = document.getElementById("ko-erillinen-kuva");
+    if (erillinenKuvaAlue && kuvaElementti) {
+        erillinenKuvaAlue.style.display = "none";
+        kuvaElementti.src = "";
+    }
+
     try {
-        // 1. HAETAAN VARAOSATIEDOT YHTEISESTÄ POHJASTA (esim. "SD-kaappi")
         const { data, error } = await supabaseclient
             .from('sahkokaapin_osat')
             .select('*')
-            .eq('kaappi', kaappiTyyppi) // HUOM! Käytetään yhteistä tyyppiä
+            .eq('kaappi', kaappiTyyppi)
             .eq('positio', osaNumero) 
             .maybeSingle();
 
@@ -102,24 +101,38 @@ let kaappiTyyppi = kaapinNimi;
             document.getElementById("ko-varaosanro").innerText = "-";
             document.getElementById("ko-tuotenro").innerText = "-";
             document.getElementById("ko-hyllypaikka").innerText = "-";
-	    document.getElementById("ko-info").innerText = "-";
+            document.getElementById("ko-info").innerText = "-";
         } else {
             document.getElementById("ko-nimi").innerText = data.nimi || "-";
-            document.getElementById("ko-varaosanro").innerText = data.varaosanumero || "-";
+            const varaosaNro = data.varaosanumero || "-";
+            document.getElementById("ko-varaosanro").innerText = varaosaNro;
             document.getElementById("ko-tuotenro").innerText = data.tuotenumero || "-";
             document.getElementById("ko-hyllypaikka").innerText = data.hyllypaikka || "-";
-            document.getElementById("ko-info").innerText = data.info || "-";        }
+            document.getElementById("ko-info").innerText = data.info || "-";
+
+            // UUSI: Ladataan kuva uuteen erilliseen diviin
+            if (kuvaElementti && erillinenKuvaAlue && varaosaNro !== "-" && varaosaNro.trim() !== "") {
+                const puhdasNro = varaosaNro.trim(); 
+                const { data: kuvaData } = supabaseclient.storage.from('pics').getPublicUrl(`${puhdasNro}.jpg`);
+                
+                if (kuvaData && kuvaData.publicUrl) {
+                    kuvaElementti.src = kuvaData.publicUrl;
+                    erillinenKuvaAlue.style.display = "block"; // Näytetään koko erillinen alue
+                    
+                    // Turvakikka: Piilotetaan koko laatikko, jos kuvaa ei löydy oikeasti bucketista
+                    kuvaElementti.onerror = function() {
+                        erillinenKuvaAlue.style.display = "none";
+                    };
+                }
+            }
+        }
     } catch (err) {
         console.error("Virhe:", err);
         document.getElementById("ko-nimi").innerText = "Yhteysvirhe";
     }
 
-    // 2. ASETETAAN HISTORIAAN YKSILÖLLINEN KAAPPI (esim. "SO02.SD003")
-    // Tämä takaa sen, että huoltohistoria menee oikealle laitteelle!
     aktiivinenKaappi = kaapinNimi; 
     aktiivinenOsaNumero = osaNumero;
-    
-    // Haetaan tämän kyseisen yksilön historia
     paivitaKaapinOsanHistoria();
 }
 async function tallennaVaraosa(laiteId, index) {
