@@ -111,35 +111,61 @@ function paivitaVikaKartta() {
 
 async function vaihdaVikaTilaa() {
     if (aktiivisetViat[valittuKuljetinID]) {
+        // --- VIAN KUITTAUS (Muokkaustila) ---
         const vanhaTila = aktiivisetViat[valittuKuljetinID];
-        let otsikko = "Vian korjaus"; let sijainti = "Määrittelemätön"; let kommentti = "";
-        if (typeof vanhaTila === "object") { otsikko = vanhaTila.otsikko || "Vian korjaus"; sijainti = vanhaTila.sijainti || "Määrittelemätön"; kommentti = vanhaTila.kommentti || ""; }
+        let otsikko = typeof vanhaTila === "object" ? (vanhaTila.otsikko || "Vian korjaus") : "Vian korjaus";
+        let sijainti = typeof vanhaTila === "object" ? (vanhaTila.sijainti || "Määrittelemätön") : "Määrittelemätön";
+        let kommentti = typeof vanhaTila === "object" ? (vanhaTila.kommentti || "") : "";
 
-        await supabaseclient.from('aktiiviset_viat').delete().eq('laite_id', valittuKuljetinID);
-        delete aktiivisetViat[valittuKuljetinID];
-
+        // 1. EI POISTETA VIELÄ TIETOKANNASTA, avataan vain lomake
         naytaLisaysLomake();
+        
+        // 2. Täytetään lomake tiedoilla (olettaen että sinulla on muuttuja, joka tietää mikä rivi on auki)
         document.getElementById("uusiOtsikko").value = otsikko.replace(/\s*\([^)]*\)\s*$/, ''); 
         document.getElementById("uusiSijainti").value = sijainti; 
-        document.getElementById("uusiOsat").value = kommentti.replace(/\s*\(Työ:\s*[^)]*\)\s*$/, '');
+        if(document.getElementById("uusiOsat")) document.getElementById("uusiOsat").value = kommentti.replace(/\s*\(Työ:\s*[^)]*\)\s*$/, '');
         if(document.getElementById("uusiStatus")) document.getElementById("uusiStatus").value = "Completed";
+        
+        // 3. TÄRKEÄÄ: Asetetaan jokin lippu, että tiedämme tämän olevan kuittaus
+        // esim. muokattavaIndeksi = etsiOikeaRivi(valittuKuljetinID);
     } else {
+        // --- UUDEN VIAN ILMOITTAMINEN (tämä puoli on OK) ---
         const uusiVika = {
-            laite_id: valittuKuljetinID, prio: document.getElementById("vikaPrioriteetti").value,
+            laite_id: valittuKuljetinID, 
+            prio: document.getElementById("vikaPrioriteetti").value,
             otsikko: document.getElementById("vikaOtsikko").value || "Määrittelemätön vika",
             sijainti: document.getElementById("vikaSijainti").value,
             kommentti: document.getElementById("vikaKommentti").value || "-",
-            tyo_numero: "-", tyo_tyyppi: "Vika"
+            tyo_numero: "-", 
+            tyo_tyyppi: "Vika"
         };
         await supabaseclient.from('aktiiviset_viat').upsert(uusiVika);
-        aktiivisetViat[valittuKuljetinID] = {
-            prio: uusiVika.prio, otsikko: uusiVika.otsikko, sijainti: uusiVika.sijainti,
-            kommentti: uusiVika.kommentti, tyoNumero: uusiVika.tyo_numero, tyoTyyppi: uusiVika.tyo_tyyppi
-        };
+        aktiivisetViat[valittuKuljetinID] = uusiVika;
+        paivitaVikaKartta(); 
+        paivitaModalinVikaTila(); 
+        paivitaVikaLista();
     }
-    paivitaVikaKartta(); paivitaModalinVikaTila(); paivitaVikaLista();
 }
-
+function kuittaaAktiivinenVika() {
+    if (!valittuKuljetinID || !huoltoHistoria[valittuKuljetinID]) return;
+    
+    // Etsitään kyseisen laitteen historia ja sieltä vika, jonka status on "New"
+    const vikaIndeksi = huoltoHistoria[valittuKuljetinID].findIndex(t => t.status && t.status.toLowerCase() === "new");
+    
+    if (vikaIndeksi !== -1) {
+        // Avataan vanha CSV-työ MUOKKAUSTILASSA (tämä estää kloonautumisen!)
+        muokkaaMerkintaa(vikaIndeksi);
+        
+        // Vaihdetaan status lomakkeessa heti valmiiksi, jotta käyttäjän ei tarvitse
+        const statusElem = document.getElementById("uusiStatus");
+        if (statusElem) statusElem.value = "Completed";
+        
+        // Rullataan ruutu nätisti lomakkeen kohdalle
+        document.getElementById("lisaysLomake").scrollIntoView({ behavior: 'smooth' });
+    } else {
+        alert("Ei aktiivista vikaa kuitattavaksi.");
+    }
+}
 function paivitaModalinVikaTila() {
     const btn = document.getElementById("btnVikaToggle");
     const teksti = document.getElementById("vikaTilaTeksti");

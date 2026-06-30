@@ -118,60 +118,51 @@ function avaaTiedot(id) {
             }
             
             // REITITYS: Valitaan oikea piirtofunktio!
-            // Tarkistetaan A011 ja A012 ensin, koska niiden nimessä voi olla myös SD.
             if (id.includes("A011") || id.includes("A012")) {
-console.log("-> Piirretään A011/A012");                
-		generoiA011_A012KaappiSVG(id);
+                console.log("-> Piirretään A011/A012");                
+                generoiA011_A012KaappiSVG(id);
             } else if (id.includes("SD")) {
-console.log("-> Piirretään SD-kaappi");
+                console.log("-> Piirretään SD-kaappi");
                 generoiSDKaappiSVG(id);
             } else if (id.includes("OU01.CC")){
-console.log("-> Piirretään OU01.CC");
+                console.log("-> Piirretään OU01.CC");
                 generoiOU01KaappiSVG(id);
             } else if (id.includes("PT")){
-console.log("-> Piirretään PT");
+                console.log("-> Piirretään PT");
                 generoiSO01PT001KaappiSVG(id);
-	    } else if (id.includes("CC")){
-console.log("-> Piirretään CC");
-	  	generoiSO01_SO02KaappiSVG(id);
+            } else if (id.includes("CC")){
+                console.log("-> Piirretään CC");
+                generoiSO01_SO02KaappiSVG(id);
             } else if (id.includes("ED")){
-console.log("-> Piirretään ED (OU01.ED)");
+                console.log("-> Piirretään ED (OU01.ED)");
                 generoiOU01EDKaappiSVG(id);
             }
             
         } else {
-console.log("-> Reititys ei löytänyt sopivaa funktiota ID:lle", id);
+            console.log("-> Reititys ei löytänyt sopivaa funktiota ID:lle", id);
             visuaalinenAlue.style.display = "none";
         }
     }
 
     document.getElementById("kuljettimenNimi").innerHTML = otsikkoHTML;
-// -- UUSI VISUAALINEN KAAPPINÄKYMÄ --
+    
+    // -- UUSI VISUAALINEN KAAPPINÄKYMÄ --
     const visuaalinenKaappi = document.getElementById("visuaalinen-kaappi-alue");
-    const normaaliNakyma = document.getElementById("normaali-laitetiedot"); // Haetaan uusi piilotettava alue
+    const normaaliNakyma = document.getElementById("normaali-laitetiedot"); 
 
     if (visuaalinenKaappi) {
-        // Tarkistetaan onko avattu laite jokin SD-kaapeista
         if (id.includes(".SD001") || id.includes(".SD002") || id.includes(".SD003") || id.includes(".SD004") || id.includes("CC") || id.includes("PT") || id.includes("OU01.CC") || id.includes("ED")) {
-            
-            // 1. Näytetään kaappi
             visuaalinenKaappi.style.display = "block";
-            
-            // 2. Piilotetaan perinteiset historiat, excel-napit ja vikatiedot!
             if (normaaliNakyma) normaaliNakyma.style.display = "none";
-            
             document.getElementById("kaappi-tyyppitiedot").innerHTML = 
                 `&nbsp; <strong>Tyyppi:</strong> SD-Sähkökaappi &nbsp;|&nbsp; <strong>Nimi:</strong> ${id}`;
-                
         } else {
-            // Jos kyseessä on tavallinen kuljetin:
-            // 1. Piilotetaan kaappi
             visuaalinenKaappi.style.display = "none";
-            
-            // 2. Palautetaan näkyviin historia ja vikatiedot
             if (normaaliNakyma) normaaliNakyma.style.display = "block";
         }
-    }    const varaosaLisaaBtn = document.querySelector(".nappi-lisaa[onclick='lisaaUusiVaraosa()']");
+    }    
+
+    const varaosaLisaaBtn = document.querySelector(".nappi-lisaa[onclick='lisaaUusiVaraosa()']");
     if(varaosaLisaaBtn) {
         varaosaLisaaBtn.style.display = onkoAdmin ? "inline-block" : "none";
     }
@@ -230,8 +221,16 @@ function naytaLisaysLomake() {
 function piilotaLisaysLomake() {
     document.getElementById("lisaysLomake").style.display = "none";
     document.getElementById("btnNaytaLisays").style.display = "inline-block";
-    document.getElementById("huoltoForm").reset(); muokattavaIndeksi = -1; 
-    const poistaBtn = document.getElementById("btnPoistaTyö"); if (poistaBtn) poistaBtn.style.display = "none";
+    document.getElementById("huoltoForm").reset(); 
+    muokattavaIndeksi = -1; 
+    
+    const poistaBtn = document.getElementById("btnPoistaTyö"); 
+    if (poistaBtn) poistaBtn.style.display = "none";
+
+    // KORJAUS 1: Palautetaan vika-banneri näkyviin, jos peruutit kuitauksen
+    if (typeof valittuKuljetinID !== "undefined" && valittuKuljetinID) {
+        paivitaModalinVikaTila();
+    }
 }
 
 function muokkaaMerkintaa(indeksi) {
@@ -264,8 +263,10 @@ async function tallennaUusiMerkinta(event) {
 
     const pvmInput = document.getElementById("uusiPvm").value;
     const tyoNumero = document.getElementById("uusiTyoNumero").value;
-    const tyoTyyppiElem = document.getElementById("uusiTyoTyyppi"); const tyoTyyppi = tyoTyyppiElem ? tyoTyyppiElem.value : "Vika";
-    const statusElem = document.getElementById("uusiStatus"); const status = statusElem ? statusElem.value : "-";
+    const tyoTyyppiElem = document.getElementById("uusiTyoTyyppi"); 
+    const tyoTyyppi = tyoTyyppiElem ? tyoTyyppiElem.value : "Vika";
+    const statusElem = document.getElementById("uusiStatus"); 
+    const status = statusElem ? statusElem.value : "-";
     const sijainti = document.getElementById("uusiSijainti").value; 
     const otsikko = document.getElementById("uusiOtsikko").value;
     const osat = document.getElementById("uusiOsat").value || "-";
@@ -273,7 +274,8 @@ async function tallennaUusiMerkinta(event) {
 
     let pvmMuotoiltu = pvmInput;
     if (pvmInput && pvmInput.includes("-")) {
-        const dateObj = new Date(pvmInput); pvmMuotoiltu = `${String(dateObj.getDate()).padStart(2, '0')}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${dateObj.getFullYear()}`;
+        const dateObj = new Date(pvmInput); 
+        pvmMuotoiltu = `${String(dateObj.getDate()).padStart(2, '0')}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${dateObj.getFullYear()}`;
     }
 
     const dbObj = {
@@ -284,6 +286,7 @@ async function tallennaUusiMerkinta(event) {
     const siirretaanToiselle = (muokattavaIndeksi !== -1 && kohdeLaiteID !== valittuKuljetinID);
 
     try {
+        // 1. TALLENNUS TIETOKANTAAN
         if (muokattavaIndeksi !== -1) {
             if(!onkoAdmin) { alert("Ei oikeuksia muokata vanhaa työtä!"); return; } 
 
@@ -300,26 +303,15 @@ async function tallennaUusiMerkinta(event) {
         } else {
             const { data } = await supabaseclient.from('huoltohistoria').insert(dbObj).select();
             if(data && data[0]) dbObj.id = data[0].id;
-            
-            if (dbObj.status === "Completed" && huoltoHistoria[kohdeLaiteID]) {
-                const vanhatKeskeneraiset = huoltoHistoria[kohdeLaiteID].filter(t => t.status && t.status.toLowerCase() === "new");
-                for (let vanha of vanhatKeskeneraiset) {
-                    const { error } = await supabaseclient.from('huoltohistoria').update({ status: 'Completed' }).eq('id', vanha.id);
-                    if (error) {
-                        console.error("Tietokantavirhe (RLS estää):", error);
-                        alert("HUOMIO: Tietokanta esti vanhan vian kuittauksen! Tämä johtuu Supabasen RLS-oikeuksista.");
-                    } else {
-                        vanha.status = "Completed"; 
-                    }
-                }
-            }
         }
 
+        // 2. KÄYTTÖLIITTYMÄOBJEKTIN LUONTI
         const uiObj = {
             id: dbObj.id, pvm: dbObj.pvm, tyoNumero: dbObj.tyo_numero, tyoTyyppi: dbObj.tyo_tyyppi,
             sijainti: dbObj.sijainti, otsikko: dbObj.otsikko, osat: dbObj.osat, tekija: dbObj.tekija, status: dbObj.status
         };
 
+        // 3. PAIKALLISEN MUISTIN PÄIVITYS
         if (siirretaanToiselle) {
             if (huoltoHistoria[valittuKuljetinID].length === 0) delete huoltoHistoria[valittuKuljetinID];
             await synkronoiLaitteenVikatila(valittuKuljetinID);
@@ -327,16 +319,31 @@ async function tallennaUusiMerkinta(event) {
             huoltoHistoria[kohdeLaiteID].unshift(uiObj);
         } else {
             if (!huoltoHistoria[kohdeLaiteID]) huoltoHistoria[kohdeLaiteID] = [];
-            if (muokattavaIndeksi === -1) { huoltoHistoria[kohdeLaiteID].unshift(uiObj); } 
-            else { huoltoHistoria[kohdeLaiteID][muokattavaIndeksi] = uiObj; }
+            if (muokattavaIndeksi === -1) { 
+                huoltoHistoria[kohdeLaiteID].unshift(uiObj); 
+            } else { 
+                huoltoHistoria[kohdeLaiteID][muokattavaIndeksi] = uiObj; 
+            }
         }
 
+        // 4. KUITTAUSLOGIIKKA (Siivoaa aktiivisen vian pois, jos työ kuitataan valmiiksi)
+        if (dbObj.status === "Completed" && aktiivisetViat[kohdeLaiteID]) {
+            await supabaseclient.from('aktiiviset_viat').delete().eq('laite_id', kohdeLaiteID);
+            delete aktiivisetViat[kohdeLaiteID];
+        }
+
+        // 5. NÄKYMIEN PÄIVITYS
         await synkronoiLaitteenVikatila(kohdeLaiteID);
+        piilotaLisaysLomake(); 
+        avaaTiedot(valittuKuljetinID); 
         
-        piilotaLisaysLomake(); avaaTiedot(valittuKuljetinID); 
-        paivitaVikaKartta(); paivitaVikaLista(); paivitaKokoHistoriaNakyma();
+        paivitaVikaKartta(); 
+        paivitaVikaLista(); 
+        paivitaKokoHistoriaNakyma();
         paivitaPeruskunnostetutKartalle();
+
     } catch (err) {
+        console.error("Virhe tallennettaessa:", err);
         alert("Virhe tallennettaessa: " + err.message);
     }
 }
@@ -366,6 +373,7 @@ async function poistaValittuTyo() {
         }
     }
 }
+
 function kirjaaKaapinOsaan(osaNimi) {
     naytaLisaysLomake();
     const sijaintiKentta = document.getElementById("uusiSijainti");
