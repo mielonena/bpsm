@@ -792,13 +792,15 @@ function generoiSO01_SO02KaappiSVG(kaapinNimi) {
     luoOsa(280, 440, 25, 45, "28", "12px");
 
     // --- Oikea keskilohko (PLC) ---
-    luoRakenne(440, 250, 60, 70);
-    luoTeksti(470, 285, "PS307", "12px", -90);
-    luoRakenne(500, 250, 130, 70, "CPU319-3 PN/DP");
+    luoOsa(440, 250, 60, 70, "11");
+    luoTeksti(450, 285, "PS307", "12px", -90);
+    luoOsa(500, 250, 130, 70, "11.1");
+    luoTeksti(570, 265, "CPU319-3 PN/DP", "10px");
     luoTeksti(445, 258, "+", "10px"); luoTeksti(445, 312, "+", "10px");
     luoTeksti(622, 258, "+", "10px"); luoTeksti(622, 312, "+", "10px");
-    luoOsa(630, 250, 80, 70, "11");
-    luoOsa(780, 210, 20, 25, "12", "11px");
+    luoOsa(630, 250, 20, 70, "11.2","11px", -90);
+    luoOsa(650, 250, 20, 70, "11.3","11px", -90);
+    luoOsa(750, 210, 20, 25, "12", "11px");
     luoRakenne(410, 400, 360, 20, "LKG 75050");
 
     // --- Alaosa (Kiskot ja massiiviset moduulit) ---
