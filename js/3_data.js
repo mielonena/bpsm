@@ -45,17 +45,3 @@ async function lataaKaikkiDataTietokannasta() {
         console.error("Virhe ladattaessa dataa:", err);
     }
 }
-
-async function tyhjennaKokoMuisti() {
-    if(!onkoAdmin) { alert("Vain admin voi tyhjentää tietokannan!"); return; }
-    if (confirm("⚠️ HUOMIO!\n\nHaluatko varmasti tyhjentää KOKO pilvitietokannan?\n Tätä ei voi peruuttaa!")) {
-        try {
-            await supabaseclient.from('huoltohistoria').delete().neq('laite_id', 'TRUNCATE_FORCE');
-            await supabaseclient.from('aktiiviset_viat').delete().neq('laite_id', 'TRUNCATE_FORCE');
-            await supabaseclient.from('varaosat').delete().neq('laite_id', 'TRUNCATE_FORCE');
-            
-            alert("Pilvitietokanta tyhjennetty. Sivu päivitetään.");
-            window.location.reload();
-        } catch (err) { alert("Virhe tyhjennettäessä muistia pilvestä: " + err.message); }
-    }
-}
