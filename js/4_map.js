@@ -718,6 +718,48 @@ function generoiOU01KaappiSVG(kaapinNimi) {
     html += `<line x1="10" y1="910" x2="790" y2="910" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="10,5" />`;
     luoTeksti(400, 895, "LKG 75050 FOR BUSCABEL INSTALL ON THE BACK BASE", "14px");
 
+    // ========================================== //
+    // === OVI JA SEN KOMPONENTIT (Oikea reuna) === //
+    // ========================================== //
+    
+    html += `<rect x="820" y="30" width="160" height="220" fill="#f8f9f9" stroke="#bdc3c7" stroke-width="2" rx="5" />`;
+    luoTeksti(900, 60, "OVI", "16px");
+
+    function luoPyoreaOsa(cx, cy, r, vari, numero) {
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('circle').setAttribute('stroke', '#3498db'); this.querySelector('circle').setAttribute('stroke-width', '4');" 
+                    onmouseout="this.querySelector('circle').setAttribute('stroke', '#2c3e50'); this.querySelector('circle').setAttribute('stroke-width', '1.5');">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="${vari}" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${cx}" y="${cy + r + 15}" fill="#2c3e50" font-size="12px" font-weight="bold" font-family="Arial" text-anchor="middle" pointer-events="none">${numero}</text>
+        </g>`;
+    }
+    luoOsa(840, 105, 120, 95,"72");
+    luoRakenne(860, 120, 80, 40,"");
+
+
+    luoRakenne(860, 165, 10, 10,"");
+    luoRakenne(874, 165, 10, 10,"");
+    luoRakenne(888, 165, 10, 10,"");
+    luoRakenne(902, 165, 10, 10,"");    
+    luoRakenne(916, 165, 10, 10,"");
+    luoRakenne(930, 165, 10, 10,"");
+    luoRakenne(860, 175, 10, 10,"");
+    luoRakenne(874, 175, 10, 10,"");
+    luoRakenne(888, 175, 10, 10,"");
+    luoRakenne(902, 175, 10, 10,"");    
+    luoRakenne(916, 175, 10, 10,"");
+    luoRakenne(930, 175, 10, 10,"");
+    luoRakenne(860, 185, 10, 10,"");
+    luoRakenne(874, 185, 10, 10,"");
+    luoRakenne(888, 185, 10, 10,"");
+    luoRakenne(902, 185, 10, 10,"");    
+    luoRakenne(916, 185, 10, 10,"");
+    luoRakenne(930, 185, 10, 10,"");
+
+
+
+
+
     // Tulostetaan SVG ruudulle
     svgAlue.innerHTML = html;
 }
@@ -845,6 +887,59 @@ function generoiSO01_SO02KaappiSVG(kaapinNimi) {
     html += `<line x1="10" y1="910" x2="790" y2="910" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="10,5" />`;
     luoTeksti(400, 895, "LKG 75050 FOR BUSCABEL INSTALL ON THE BACK BASE", "14px");
 
+    // ========================================== //
+    // === OVI JA SEN KOMPONENTIT (Oikea reuna) === //
+    // ========================================== //
+    
+    html += `<rect x="820" y="30" width="160" height="220" fill="#f8f9f9" stroke="#bdc3c7" stroke-width="2" rx="5" />`;
+    luoTeksti(900, 60, "OVI", "16px");
+
+    function luoPyoreaOsa(cx, cy, r, vari, numero) {
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('circle').setAttribute('stroke', '#3498db'); this.querySelector('circle').setAttribute('stroke-width', '4');" 
+                    onmouseout="this.querySelector('circle').setAttribute('stroke', '#2c3e50'); this.querySelector('circle').setAttribute('stroke-width', '1.5');">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="${vari}" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${cx}" y="${cy + r + 15}" fill="#2c3e50" font-size="12px" font-weight="bold" font-family="Arial" text-anchor="middle" pointer-events="none">${numero}</text>
+        </g>`;
+    }
+    luoOsa(840, 105, 120, 95,"43");
+    luoRakenne(860, 120, 80, 40,"");
+    luoRakenne(845, 120, 10, 10,"");
+    luoRakenne(845, 130, 10, 10,"");
+    luoRakenne(845, 140, 10, 10,"");
+    luoRakenne(845, 150, 10, 10,"");
+    luoRakenne(845, 165, 10, 10,"");
+    luoRakenne(845, 175, 10, 10,"");
+    luoRakenne(845, 185, 10, 10,"");
+
+    luoRakenne(860, 165, 10, 10,"");
+    luoRakenne(874, 165, 10, 10,"");
+    luoRakenne(888, 165, 10, 10,"");
+    luoRakenne(902, 165, 10, 10,"");    
+    luoRakenne(916, 165, 10, 10,"");
+    luoRakenne(930, 165, 10, 10,"");
+    luoRakenne(860, 175, 10, 10,"");
+    luoRakenne(874, 175, 10, 10,"");
+    luoRakenne(888, 175, 10, 10,"");
+    luoRakenne(902, 175, 10, 10,"");    
+    luoRakenne(916, 175, 10, 10,"");
+    luoRakenne(930, 175, 10, 10,"");
+    luoRakenne(860, 185, 10, 10,"");
+    luoRakenne(874, 185, 10, 10,"");
+    luoRakenne(888, 185, 10, 10,"");
+    luoRakenne(902, 185, 10, 10,"");    
+    luoRakenne(916, 185, 10, 10,"");
+    luoRakenne(930, 185, 10, 10,"");
+
+    luoRakenne(945, 120, 10, 10,"");
+    luoRakenne(945, 130, 10, 10,"");
+    luoRakenne(945, 140, 10, 10,"");
+    luoRakenne(945, 150, 10, 10,"");
+    luoRakenne(945, 165, 10, 10,"");
+    luoRakenne(945, 175, 10, 10,"");
+    luoRakenne(945, 185, 10, 10,"");
+
+
     svgAlue.innerHTML = html;
 }
 // ========================================== //
@@ -894,11 +989,7 @@ function generoiSO01PT001KaappiSVG(kaapinNimi) {
 
     html += `<rect x="470" y="130" width="300" height="600" fill="none" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="10,5" />`;
     
-    // Pitkä ohjeteksti oikealla
-    luoTeksti(620, 150, "EACH PHASE 2x M12 DRILLED HOLE,", "12px");
-    luoTeksti(620, 165, "BOLT MOUNTED FROM BEHIND,", "12px");
-    luoTeksti(620, 180, "COPPER-PLATE FOR BAR SPACER", "12px");
-    luoTeksti(620, 195, "MOUNTED IN THE FRONT AT THE BAR", "12px");
+
 
     // --- Vasen pystylogo (LKG 75050) ---
     luoRakenne(30, 50, 30, 550);
@@ -916,7 +1007,11 @@ function generoiSO01PT001KaappiSVG(kaapinNimi) {
     luoOsa(300, 440, 40, 35, "15");
 
     // Osat 8 ja 14
-    luoOsa(110, 525, 60, 60, "8");
+    luoOsa(110, 525, 20, 60, "8", "12px", -90);
+    luoOsa(130, 525, 20, 60, "8.1", "12px", -90);
+    luoOsa(150, 525, 20, 60, "8.2", "12px", -90);
+    luoOsa(170, 525, 20, 60, "8.2", "12px", -90);
+
     luoOsa(300, 535, 40, 40, "14");
 
     // --- Alaosan vaakakiskot (L1, L2, L3) ---
@@ -938,10 +1033,6 @@ function generoiSO01PT001KaappiSVG(kaapinNimi) {
     html += `<rect x="520" y="265" width="200" height="10" fill="#e67e22" stroke="#d35400" />`;
     html += `<rect x="520" y="290" width="200" height="10" fill="#e67e22" stroke="#d35400" />`;
 
-    // Kolmiomainen johdotus (graafinen viitteistys)
-    html += `<polyline points="620,210 530,295" fill="none" stroke="#2c3e50" stroke-width="2" />`;
-    html += `<polyline points="620,210 620,245" fill="none" stroke="#2c3e50" stroke-width="2" />`;
-    html += `<polyline points="620,210 710,295" fill="none" stroke="#2c3e50" stroke-width="2" />`;
 
     // Pystykiskot ja tekstit (yläpuoli)
     html += `<rect x="550" y="250" width="15" height="150" fill="#e67e22" stroke="#d35400" />`;
