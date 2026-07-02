@@ -1104,24 +1104,33 @@ function generoiOU01EDKaappiSVG(kaapinNimi) {
         }
     }
 
+// TEKSTIN LUONTI
+    function luoTeksti(x, y, teksti, koko="14px", kulma=0) {
+        let transform = kulma ? `transform="rotate(${kulma} ${x} ${y})"` : "";
+        html += `<text x="${x}" y="${y}" fill="#34495e" font-size="${koko}" font-family="Arial" font-weight="bold" text-anchor="middle" dominant-baseline="central" ${transform} pointer-events="none">${teksti}</text>`;
+    }
+
+    // Oven painikkeiden luonti
+    function luoPyoreaOsa(cx, cy, r, vari, numero) {
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('circle').setAttribute('stroke', '#3498db'); this.querySelector('circle').setAttribute('stroke-width', '4');" 
+                    onmouseout="this.querySelector('circle').setAttribute('stroke', '#2c3e50'); this.querySelector('circle').setAttribute('stroke-width', '1.5');">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="${vari}" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${cx}" y="${cy + r + 15}" fill="#2c3e50" font-size="12px" font-weight="bold" font-family="Arial" text-anchor="middle" pointer-events="none">${numero}</text>
+        </g>`;
+    }
+
     // --- Tausta ja ulkoreunat (Matalampi malli, korkeus 500) ---
-    html += `<rect x="10" y="10" width="780" height="480" fill="#ffffff" stroke="#2c3e50" stroke-width="2" />`;
+    html += `<rect x="10" y="10" width="680" height="480" fill="#ffffff" stroke="#2c3e50" stroke-width="2" />`;
     
     // ========================================== //
     // === YLÄOSAN KOMPONENTIT                === //
     // ========================================== //
-    
-    // Osa 2 (Hieman kapeampi ja lyhyempi)
     luoOsa(40, 60, 40, 120, "2");
-    
-    // Osa 3 (Isompi laatikko)
     luoOsa(100, 40, 70, 160, "3");
-
-    // Osat 4 ja 5 (Keskellä, leveämmät moduulit)
     luoOsa(240, 40, 60, 160, "4");
     luoOsa(300, 40, 60, 160, "5");
 
-    // Osat 6-12 (Kapeat riviliittimet / moduulit)
     for (let i = 0; i < 7; i++) {
         luoOsa(360 + (i * 35), 40, 35, 160, `${6 + i}`);
     }
@@ -1129,18 +1138,24 @@ function generoiOU01EDKaappiSVG(kaapinNimi) {
     // ========================================== //
     // === KESKIKISKO / RAKENNE               === //
     // ========================================== //
-    luoRakenne(10, 240, 780, 40);
+    luoRakenne(10, 240, 680, 40);
 
     // ========================================== //
     // === ALAOSAN KOMPONENTIT                === //
     // ========================================== //
-    
-    // Osa 13 (Kapea pystylaatikko)
     luoOsa(40, 320, 40, 120, "13");
-
-    // Osa 14 (Pitkä vaakalaatikko)
     luoOsa(100, 320, 505, 120, "14", "24px");
 
-    // Piirretään ruudulle
+    // ========================================== //
+    // === OVI JA SEN KOMPONENTIT (Oikea reuna) === //
+    // ========================================== //
+    html += `<rect x="710" y="30" width="280" height="180" fill="#f8f9f9" stroke="#bdc3c7" stroke-width="2" rx="5" />`;
+    luoTeksti(850, 60, "OVI", "18px");
+    
+    // Esimerkkipainikkeet ovelle (muuta numeroita tarpeen mukaan)
+
+    luoPyoreaOsa(850, 120, 12, "#3498db", "15"); // Sininen
+  
+  // Piirretään ruudulle
     svgAlue.innerHTML = html;
 }
