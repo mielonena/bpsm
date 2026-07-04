@@ -108,7 +108,7 @@ function avaaTiedot(id) {
     
     if (visuaalinenAlue && sdKaappiSvg) {
         // Tarkistetaan, näytetäänkö ylipäätään kaappikuvaa
-        if (id.includes("SD") || id.includes("A011") || id.includes("A012") || id.includes("CC") || id.includes("PT") || id.includes("OU01.CC") || id.includes("ED")) {
+        if (id.includes("SD") || id.includes("A011") || id.includes("A012") || id.includes("CC") || id.includes("PT") || id.includes("OU01.CC") || id.includes("ED") || id.includes("OU01.AD") || id.includes("SO01.AD") || id.includes("SO02.AD") || id.includes("DI")) {
             visuaalinenAlue.style.display = "block";
             sdKaappiSvg.style.display = "block";
             
@@ -118,9 +118,9 @@ function avaaTiedot(id) {
             }
             
             // REITITYS: Valitaan oikea piirtofunktio!
-            if (id.includes("A011") || id.includes("A012")) {
-                console.log("-> Piirretään A011/A012");                
-                generoiA011_A012KaappiSVG(id);
+            if (id.includes("DI")){
+                console.log("-> Piirretään DI (OU01.DI)");
+                generoiDIKaappiSVG(id);
             } else if (id.includes("SD")) {
                 console.log("-> Piirretään SD-kaappi");
                 generoiSDKaappiSVG(id);
@@ -133,10 +133,28 @@ function avaaTiedot(id) {
             } else if (id.includes("CC")){
                 console.log("-> Piirretään CC");
                 generoiSO01_SO02KaappiSVG(id);
-            } else if (id.includes("ED")){
+            } else if (id.includes("OU01.ED")){
                 console.log("-> Piirretään ED (OU01.ED)");
                 generoiOU01EDKaappiSVG(id);
             }
+	      else if (id.includes("OU01.AD")){
+                console.log("-> Piirretään AD (OU01.AD)");
+                generoiOU01ADKaappiSVG(id);
+            }
+	      else if (id.includes("SO01.AD")){
+                console.log("-> Piirretään AD (SO01.AD)");
+                generoiSO0102ADKaappiSVG(id);
+            }
+	      else if (id.includes("SO02.AD")){
+                console.log("-> Piirretään AD (SO02.AD)");
+                generoiSO0102ADKaappiSVG(id);
+            }	     
+	      else if (id.includes("A011") || id.includes("A012")) {
+                console.log("-> Piirretään A011/A012");                
+                generoiA011_A012KaappiSVG(id);
+
+            }
+
             
         } else {
             console.log("-> Reititys ei löytänyt sopivaa funktiota ID:lle", id);
@@ -151,7 +169,7 @@ function avaaTiedot(id) {
     const normaaliNakyma = document.getElementById("normaali-laitetiedot"); 
 
     if (visuaalinenKaappi) {
-        if (id.includes(".SD001") || id.includes(".SD002") || id.includes(".SD003") || id.includes(".SD004") || id.includes("CC") || id.includes("PT") || id.includes("OU01.CC") || id.includes("ED")) {
+        if (id.includes(".SD001") || id.includes(".SD002") || id.includes(".SD003") || id.includes(".SD004") || id.includes("CC") || id.includes("PT") || id.includes("OU01.CC") || id.includes("ED") || id.includes("OU01.AD") || id.includes("SO01.AD") || id.includes("SO02.AD") || id.includes("DI")) {
             visuaalinenKaappi.style.display = "block";
             if (normaaliNakyma) normaaliNakyma.style.display = "none";
             document.getElementById("kaappi-tyyppitiedot").innerHTML = 

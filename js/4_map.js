@@ -1159,3 +1159,199 @@ function generoiOU01EDKaappiSVG(kaapinNimi) {
   // Piirretään ruudulle
     svgAlue.innerHTML = html;
 }
+
+// ========================================== //
+// === ALAKESKUS (OU01.AD)                === //
+// ========================================== //
+function generoiOU01ADKaappiSVG(kaapinNimi) {
+    const svgAlue = document.getElementById("sd-kaappi-svg");
+    if (!svgAlue) return;
+
+    let html = "";
+
+    function luoOsa(x, y, w, h, numero, koko="16px", kulma=0) {
+        let transform = kulma ? `transform="rotate(${kulma} ${x + w/2} ${y + h/2})"` : "";
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('rect').setAttribute('fill', '#3498db'); this.querySelector('text').setAttribute('fill', '#ffffff');" 
+                    onmouseout="this.querySelector('rect').setAttribute('fill', '#ffffff'); this.querySelector('text').setAttribute('fill', '#2c3e50');">
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${x + w/2}" y="${y + h/2}" fill="#2c3e50" font-size="${koko}" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none" ${transform}>${numero}</text>
+        </g>`;
+    }
+
+    function luoRakenne(x, y, w, h, teksti = "") {
+        if (w > 0 && h > 0) {
+            html += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#95a5a6" stroke-width="1" />`;
+        }
+        if (teksti) {
+            html += `<text x="${x + w/2}" y="${y + h/2}" fill="#7f8c8d" font-size="14px" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none">${teksti}</text>`;
+        }
+    }
+
+// TEKSTIN LUONTI
+    function luoTeksti(x, y, teksti, koko="14px", kulma=0) {
+        let transform = kulma ? `transform="rotate(${kulma} ${x} ${y})"` : "";
+        html += `<text x="${x}" y="${y}" fill="#34495e" font-size="${koko}" font-family="Arial" font-weight="bold" text-anchor="middle" dominant-baseline="central" ${transform} pointer-events="none">${teksti}</text>`;
+    }
+
+    // Oven painikkeiden luonti
+    function luoPyoreaOsa(cx, cy, r, vari, numero) {
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('circle').setAttribute('stroke', '#3498db'); this.querySelector('circle').setAttribute('stroke-width', '4');" 
+                    onmouseout="this.querySelector('circle').setAttribute('stroke', '#2c3e50'); this.querySelector('circle').setAttribute('stroke-width', '1.5');">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="${vari}" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${cx}" y="${cy + r + 15}" fill="#2c3e50" font-size="12px" font-weight="bold" font-family="Arial" text-anchor="middle" pointer-events="none">${numero}</text>
+        </g>`;
+    }
+
+    // --- Tausta ja ulkoreunat (Matalampi malli, korkeus 500) ---
+    html += `<rect x="10" y="10" width="580" height="380" fill="#ffffff" stroke="#2c3e50" stroke-width="2" />`;
+    
+    // ========================================== //
+    // === YLÄOSAN KOMPONENTIT                === //
+    // ========================================== //
+    luoOsa(40, 60, 130, 170, "1");
+    luoOsa(175, 100, 120, 110, "2");
+    luoOsa(300, 60, 130, 170, "3");
+    luoOsa(435, 100, 120, 110, "4");
+
+
+    // ========================================== //
+    // === RIVILIITTIMET                      === //
+    // ========================================== //
+    
+    luoRakenne(40,315,500,25);
+    luoOsa(200, 300, 80, 50, "15");
+    luoOsa(300, 300, 150, 50, "16");
+
+  
+  // Piirretään ruudulle
+    svgAlue.innerHTML = html;
+}
+
+// ========================================== //
+// ===      ALAKESKUS (SO01.AD SO02.AD)   === //
+// ========================================== //
+function generoiSO0102ADKaappiSVG(kaapinNimi) {
+    const svgAlue = document.getElementById("sd-kaappi-svg");
+    if (!svgAlue) return;
+
+    let html = "";
+
+    function luoOsa(x, y, w, h, numero, koko="16px", kulma=0) {
+        let transform = kulma ? `transform="rotate(${kulma} ${x + w/2} ${y + h/2})"` : "";
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('rect').setAttribute('fill', '#3498db'); this.querySelector('text').setAttribute('fill', '#ffffff');" 
+                    onmouseout="this.querySelector('rect').setAttribute('fill', '#ffffff'); this.querySelector('text').setAttribute('fill', '#2c3e50');">
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${x + w/2}" y="${y + h/2}" fill="#2c3e50" font-size="${koko}" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none" ${transform}>${numero}</text>
+        </g>`;
+    }
+
+    function luoRakenne(x, y, w, h, teksti = "") {
+        if (w > 0 && h > 0) {
+            html += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#95a5a6" stroke-width="1" />`;
+        }
+        if (teksti) {
+            html += `<text x="${x + w/2}" y="${y + h/2}" fill="#7f8c8d" font-size="14px" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none">${teksti}</text>`;
+        }
+    }
+
+// TEKSTIN LUONTI
+    function luoTeksti(x, y, teksti, koko="14px", kulma=0) {
+        let transform = kulma ? `transform="rotate(${kulma} ${x} ${y})"` : "";
+        html += `<text x="${x}" y="${y}" fill="#34495e" font-size="${koko}" font-family="Arial" font-weight="bold" text-anchor="middle" dominant-baseline="central" ${transform} pointer-events="none">${teksti}</text>`;
+    }
+
+    // Oven painikkeiden luonti
+    function luoPyoreaOsa(cx, cy, r, vari, numero) {
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('circle').setAttribute('stroke', '#3498db'); this.querySelector('circle').setAttribute('stroke-width', '4');" 
+                    onmouseout="this.querySelector('circle').setAttribute('stroke', '#2c3e50'); this.querySelector('circle').setAttribute('stroke-width', '1.5');">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="${vari}" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${cx}" y="${cy + r + 15}" fill="#2c3e50" font-size="12px" font-weight="bold" font-family="Arial" text-anchor="middle" pointer-events="none">${numero}</text>
+        </g>`;
+    }
+
+    // --- Tausta ja ulkoreunat (Matalampi malli, korkeus 500) ---
+    html += `<rect x="10" y="10" width="250" height="350" fill="#ffffff" stroke="#2c3e50" stroke-width="2" />`;
+    
+    // ========================================== //
+    // ===  KAAPIN KOMPONENTIT                === //
+    // ========================================== //
+
+    luoOsa(40, 60, 100, 140, "1");
+    luoOsa(150, 100, 100, 90, "2");
+    luoOsa(150, 250, 40, 40, "3");
+
+  // Piirretään ruudulle
+    svgAlue.innerHTML = html;
+}
+
+// ========================================== //
+// ===      ALAKESKUS (OU01.DI)           === //
+// ========================================== //
+function generoiDIKaappiSVG(kaapinNimi) {
+    const svgAlue = document.getElementById("sd-kaappi-svg");
+    if (!svgAlue) return;
+
+    let html = "";
+
+    function luoOsa(x, y, w, h, numero, koko="16px", kulma=0) {
+        let transform = kulma ? `transform="rotate(${kulma} ${x + w/2} ${y + h/2})"` : "";
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('rect').setAttribute('fill', '#3498db'); this.querySelector('text').setAttribute('fill', '#ffffff');" 
+                    onmouseout="this.querySelector('rect').setAttribute('fill', '#ffffff'); this.querySelector('text').setAttribute('fill', '#2c3e50');">
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${x + w/2}" y="${y + h/2}" fill="#2c3e50" font-size="${koko}" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none" ${transform}>${numero}</text>
+        </g>`;
+    }
+
+    function luoRakenne(x, y, w, h, teksti = "") {
+        if (w > 0 && h > 0) {
+            html += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#95a5a6" stroke-width="1" />`;
+        }
+        if (teksti) {
+            html += `<text x="${x + w/2}" y="${y + h/2}" fill="#7f8c8d" font-size="14px" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none">${teksti}</text>`;
+        }
+    }
+
+// TEKSTIN LUONTI
+    function luoTeksti(x, y, teksti, koko="14px", kulma=0) {
+        let transform = kulma ? `transform="rotate(${kulma} ${x} ${y})"` : "";
+        html += `<text x="${x}" y="${y}" fill="#34495e" font-size="${koko}" font-family="Arial" font-weight="bold" text-anchor="middle" dominant-baseline="central" ${transform} pointer-events="none">${teksti}</text>`;
+    }
+
+    // Oven painikkeiden luonti
+    function luoPyoreaOsa(cx, cy, r, vari, numero) {
+        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
+                    onmouseover="this.querySelector('circle').setAttribute('stroke', '#3498db'); this.querySelector('circle').setAttribute('stroke-width', '4');" 
+                    onmouseout="this.querySelector('circle').setAttribute('stroke', '#2c3e50'); this.querySelector('circle').setAttribute('stroke-width', '1.5');">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="${vari}" stroke="#2c3e50" stroke-width="1.5" />
+            <text x="${cx}" y="${cy + r + 15}" fill="#2c3e50" font-size="12px" font-weight="bold" font-family="Arial" text-anchor="middle" pointer-events="none">${numero}</text>
+        </g>`;
+    }
+
+    // --- Tausta ja ulkoreunat (Matalampi malli, korkeus 500) ---
+    html += `<rect x="10" y="10" width="400" height="600" fill="#ffffff" stroke="#2c3e50" stroke-width="2" />`;
+    
+    // ========================================== //
+    // === YLÄOSAN KOMPONENTIT                === //
+    // ========================================== //
+    luoOsa(80, 60, 200, 120, "1", "24px");
+    luoOsa(100, 200, 200, 120, "2", "24px");
+  
+
+
+    // ========================================== //
+    // === ALAOSAN KOMPONENTIT                === //
+    // ========================================== //
+    luoOsa(80, 350, 140, 80, "3", "24px");
+    luoOsa(80, 450, 140, 80, "4", "24px");
+    luoOsa(300, 400, 60, 80, "5", "24px");
+    luoOsa(80, 550, 250, 30, "6", "24px");
+
+  
+  // Piirretään ruudulle
+    svgAlue.innerHTML = html;
+}
