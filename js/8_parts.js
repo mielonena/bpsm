@@ -68,7 +68,6 @@ async function naytaKaapinOsanTiedot(kaapinNimi, osaNumero) {
     else if (kaapinNimi.includes("OU01.DI")) kaappiTyyppi = "OUDI";
     else if (kaapinNimi.includes("SO01.AD") || kaapinNimi.includes("SO02.AD")) kaappiTyyppi = "SOAD";
 
-
     const paneeli = document.getElementById("kaappi-osan-tiedot");
     if (!paneeli) return;
     
@@ -86,6 +85,7 @@ async function naytaKaapinOsanTiedot(kaapinNimi, osaNumero) {
     if (erillinenKuvaAlue && kuvaElementti) {
         erillinenKuvaAlue.style.display = "none";
         kuvaElementti.src = "";
+        kuvaElementti.onclick = null; // Nollataan edellinen klikkaus, ettei jää haamuja
     }
 
     try {
@@ -121,6 +121,14 @@ async function naytaKaapinOsanTiedot(kaapinNimi, osaNumero) {
                 if (kuvaData && kuvaData.publicUrl) {
                     kuvaElementti.src = kuvaData.publicUrl;
                     erillinenKuvaAlue.style.display = "block"; // Näytetään koko erillinen alue
+                    
+                    // --- LISÄTTY: Kuvan avaaminen uuteen välilehteen ---
+                    kuvaElementti.style.cursor = "pointer";
+                    kuvaElementti.title = "Klikkaa avataksesi kuvan uuteen välilehteen";
+                    kuvaElementti.onclick = function() {
+                        window.open(kuvaData.publicUrl, '_blank');
+                    };
+                    // ---------------------------------------------------
                     
                     // Turvakikka: Piilotetaan koko laatikko, jos kuvaa ei löydy oikeasti bucketista
                     kuvaElementti.onerror = function() {
