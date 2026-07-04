@@ -1221,8 +1221,8 @@ function generoiOU01ADKaappiSVG(kaapinNimi) {
     // ========================================== //
     
     luoRakenne(40,315,500,25);
-    luoOsa(200, 300, 80, 50, "15");
-    luoOsa(300, 300, 150, 50, "16");
+    luoOsa(200, 300, 80, 50, "5");
+    luoOsa(300, 300, 150, 50, "6");
 
   
   // Piirretään ruudulle

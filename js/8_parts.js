@@ -59,12 +59,15 @@ async function naytaKaapinOsanTiedot(kaapinNimi, osaNumero) {
     // MÄÄRITETÄÄN YHTEINEN POHJA VARAOSILLE
     let kaappiTyyppi = kaapinNimi;
     
-    if (kaapinNimi.includes("A011") || kaapinNimi.includes("A012")) kaappiTyyppi = "A011-A012-kaappi";
-    else if (kaapinNimi.includes("SD")) kaappiTyyppi = "SD-kaappi"; 
+    if (kaapinNimi.includes("SD")) kaappiTyyppi = "SD-kaappi"; 
     else if (kaapinNimi.includes("OU01.CC")) kaappiTyyppi = "Luisu";
     else if (kaapinNimi.includes("PT")) kaappiTyyppi = "Main"; 
     else if (kaapinNimi.includes("CC")) kaappiTyyppi = "TopBot"; 
     else if (kaapinNimi.includes("OU01.ED")) kaappiTyyppi = "HS";
+    else if (kaapinNimi.includes("OU01.AD")) kaappiTyyppi = "OUAD";
+    else if (kaapinNimi.includes("OU01.DI")) kaappiTyyppi = "OUDI";
+    else if (kaapinNimi.includes("SO01.AD") || kaapinNimi.includes("SO02.AD")) kaappiTyyppi = "SOAD";
+
 
     const paneeli = document.getElementById("kaappi-osan-tiedot");
     if (!paneeli) return;
