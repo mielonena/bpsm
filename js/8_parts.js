@@ -210,7 +210,7 @@ function generoiKaikkiVaraosatNakyma() {
 
     if (!controls) {
         alue.innerHTML = `
-            <h2 style='color: #2c3e50; margin-top: 0;'>Kaikki järjestelmän varaosat ⚙️ <span id="master-lkm" style="font-size: 18px; color: #7f8c8d; font-weight: normal;"></span></h2>
+            <h2 style='color: #2c3e50; margin-top: 0;'>Kuljettimien varaosat ⚙️ <span id="master-lkm" style="font-size: 18px; color: #7f8c8d; font-weight: normal;"></span></h2>
             <div id="master-varaosat-controls" style="background: #f8f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #bdc3c7; display: flex; gap: 15px; align-items: center;">
                 <strong style="color: #2c3e50;">Etsi osaa:</strong>
                 <input type="text" id="hakuMasterVaraosat" placeholder="🔍 Hae numerolla, nimellä tai hyllypaikalla..." 

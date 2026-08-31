@@ -244,11 +244,14 @@ function paivitaVikaLista() {
         viatControls = document.getElementById("viat-controls");
         viatTauluAlue = document.getElementById("viat-taulu-alue");
     }
+    
     if(document.getElementById("vikaHakuAsetus")) document.getElementById("vikaHakuAsetus").value = vikaHakuTeksti;
     if(document.getElementById("vikaFiltteriAsetus")) document.getElementById("vikaFiltteriAsetus").value = vikaFiltteri;
     if(document.getElementById("vikaSorttausAsetus")) document.getElementById("vikaSorttausAsetus").value = vikaSorttaus;
 
     const prioArvot = { "korkea": 3, "keski": 2, "matala": 1 };
+    
+    // 1. Suodatetaan datat normaalisti
     let viatArray = Object.entries(aktiivisetViat)
         .filter(([id, tila]) => tila)
         .filter(([id, tila]) => vikaFiltteri === "Kaikki" || id.includes(vikaFiltteri))
@@ -268,65 +271,91 @@ function paivitaVikaLista() {
             const haku = vikaHakuTeksti;
             return item.id.toLowerCase().includes(haku) || 
                    item.otsikko.toLowerCase().includes(haku) || 
-		   item.prio.toLowerCase().includes(haku) ||
+                   item.prio.toLowerCase().includes(haku) ||
                    item.kommentti.toLowerCase().includes(haku) || 
                    item.sijainti.toLowerCase().includes(haku) ||
                    item.tyoNumero.toLowerCase().includes(haku) || 
                    item.tyoTyyppi.toLowerCase().includes(haku);
         });
 
-    if (vikaSorttaus === "kl_asc") {
-        viatArray.sort((a, b) => {
-            const tiedotA = erotteleLaiteTiedot(a.id); const tiedotB = erotteleLaiteTiedot(b.id);
-            const ryhmaVertailu = tiedotA.ryhma.localeCompare(tiedotB.ryhma, undefined, { numeric: true, sensitivity: 'base' });
-            if (ryhmaVertailu !== 0) return ryhmaVertailu; return tiedotA.nimi.localeCompare(tiedotB.nimi, undefined, { numeric: true, sensitivity: 'base' });
-        });
-    } else if (vikaSorttaus === "kl_desc") {
-        viatArray.sort((a, b) => {
-            const tiedotA = erotteleLaiteTiedot(a.id); const tiedotB = erotteleLaiteTiedot(b.id);
-            const ryhmaVertailu = tiedotB.ryhma.localeCompare(tiedotA.ryhma, undefined, { numeric: true, sensitivity: 'base' });
-            if (ryhmaVertailu !== 0) return ryhmaVertailu; return tiedotA.nimi.localeCompare(tiedotB.nimi, undefined, { numeric: true, sensitivity: 'base' });
-        });
-    } else if (vikaSorttaus === "prio") {
-        viatArray.sort((a, b) => {
-            if (prioArvot[b.prio] !== prioArvot[a.prio]) return prioArvot[b.prio] - prioArvot[a.prio];
-            const tiedotA = erotteleLaiteTiedot(a.id); const tiedotB = erotteleLaiteTiedot(b.id);
-            const ryhmaVertailu = tiedotA.ryhma.localeCompare(tiedotB.ryhma, undefined, { numeric: true, sensitivity: 'base' });
-            if (ryhmaVertailu !== 0) return ryhmaVertailu; return tiedotA.nimi.localeCompare(tiedotB.nimi, undefined, { numeric: true, sensitivity: 'base' });
-        });
-    } else if (vikaSorttaus === "az") {
-        viatArray.sort((a, b) => {
-            const tiedotA = erotteleLaiteTiedot(a.id); const tiedotB = erotteleLaiteTiedot(b.id);
-            return tiedotA.nimi.localeCompare(tiedotB.nimi, undefined, { numeric: true, sensitivity: 'base' });
-        });
-    }
-
     const lkmSpan = document.getElementById("aktiiviset-lkm");
     if (lkmSpan) lkmSpan.innerText = `(${viatArray.length} kpl)`;
 
+    // 2. Ryhmitellään viat linjan/ryhmän mukaan
+    const ryhmitelty = {};
+    viatArray.forEach(item => {
+        const tiedot = erotteleLaiteTiedot(item.id);
+        const ryhmaNimi = tiedot.ryhma || "Muut laitteet / Määrittelemätön";
+        if (!ryhmitelty[ryhmaNimi]) ryhmitelty[ryhmaNimi] = [];
+        ryhmitelty[ryhmaNimi].push(item);
+    });
+
+    // 3. Järjestetään otsikot (Ryhmät) valinnan mukaan
+    let ryhmaAvaimet = Object.keys(ryhmitelty);
+    if (vikaSorttaus === "kl_desc") {
+        ryhmaAvaimet.sort((a, b) => b.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' }));
+    } else {
+        ryhmaAvaimet.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+    }
+
+    // 4. Järjestetään rivit ryhmien sisällä
+    ryhmaAvaimet.forEach(ryhma => {
+        ryhmitelty[ryhma].sort((a, b) => {
+            const tiedotA = erotteleLaiteTiedot(a.id);
+            const tiedotB = erotteleLaiteTiedot(b.id);
+            
+            if (vikaSorttaus === "prio") {
+                if (prioArvot[b.prio] !== prioArvot[a.prio]) return prioArvot[b.prio] - prioArvot[a.prio];
+                return tiedotA.nimi.localeCompare(tiedotB.nimi, undefined, { numeric: true, sensitivity: 'base' });
+            } else {
+                return tiedotA.nimi.localeCompare(tiedotB.nimi, undefined, { numeric: true, sensitivity: 'base' });
+            }
+        });
+    });
+
+    // 5. Luodaan YKSI yhteinen HTML-taulukko
     let html = "";
-    if (viatArray.length === 0) {
+    if (ryhmaAvaimet.length === 0) {
         html += `<div style="background-color: #e8f8f5; border-left: 6px solid #2ecc71; padding: 20px; border-radius: 4px;">
                     <h3 style="color: #27ae60; margin: 0;">✅ Lista on tyhjä!</h3>
                     <p style="color: #27ae60; margin: 5px 0 0 0; font-weight: bold;">Järjestelmässä ei ole näillä hakuehdoilla aktiivisia vikoja.</p>
                 </div>`;
     } else {
-        html += `<table class="vikatilasto-taulu"><thead><tr><th>Laite / Tunnus</th><th>Prioriteetti</th><th>Työnumero</th><th>Tyyppi</th><th>Vian kuvaus</th><th>Sijainti laitteessa</th><th>Lisätiedot / Tarvittavat osat</th><th>Toiminnot</th></tr></thead><tbody>`;
-        viatArray.forEach(item => {
-            let prioTeksti = item.prio === "korkea" ? "🔴 KORKEA" : (item.prio === "keski" ? "🟠 KESKI" : "🟡 MATALA");
-            let riviTausta = item.prio === "korkea" ? "#fdedec" : (item.prio === "keski" ? "#fdf2e9" : "#fef9e7");
-            let tyyppiTyyli = (item.tyoTyyppi === "Vika") ? "color: #c0392b; font-weight: bold;" : ((item.tyoTyyppi === "Peruskunnostus") ? "color: #27ae60; font-weight: bold;" : "");
-            const tiedot = erotteleLaiteTiedot(item.id);
-            const idTeksti = tiedot.ryhma ? `${tiedot.nimi}<br><span style="font-size: 11px; color: #7f8c8d;">${tiedot.ryhma}</span>` : tiedot.nimi;
+        html += `<table class="vikatilasto-taulu" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Laite / Tunnus</th><th>Prioriteetti</th><th>Työnumero</th><th>Tyyppi</th>
+                            <th>Vian kuvaus</th><th>Sijainti laitteessa</th><th>Lisätiedot / Tarvittavat osat</th><th>Toiminnot</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+        
+        ryhmaAvaimet.forEach(ryhma => {
+            // Lisätään ryhmälle selkeä väliotsikkorivi, joka yhdistää kaikki 8 saraketta (colspan="8")
+            html += `<tr>
+                        <td colspan="8" style="background-color: #ecf0f1; color: #2c3e50; padding: 12px 15px; border-bottom: 2px solid #bdc3c7;">
+                            <h3 style="margin: 0; font-size: 16px;">📍 Linja / Ryhmä: ${ryhma}</h3>
+                        </td>
+                     </tr>`;
+            
+            ryhmitelty[ryhma].forEach(item => {
+                let prioTeksti = item.prio === "korkea" ? "🔴 KORKEA" : (item.prio === "keski" ? "🟠 KESKI" : "🟡 MATALA");
+                let riviTausta = item.prio === "korkea" ? "#fdedec" : (item.prio === "keski" ? "#fdf2e9" : "#fef9e7");
+                let tyyppiTyyli = (item.tyoTyyppi === "Vika") ? "color: #c0392b; font-weight: bold;" : ((item.tyoTyyppi === "Peruskunnostus") ? "color: #27ae60; font-weight: bold;" : "");
+                
+                const tiedot = erotteleLaiteTiedot(item.id);
+                const idTeksti = tiedot.nimi;
 
-            html += `<tr style="background-color: ${riviTausta}; font-weight: bold;">
-                        <td style="color: #2c3e50; font-size: 15px;">${idTeksti}</td><td>${prioTeksti}</td>
-                        <td>${item.tyoNumero}</td><td style="${tyyppiTyyli}">${item.tyoTyyppi}</td>
-                        <td style="color: #c0392b;">${item.otsikko}</td>
-                        <td>${item.sijainti}</td><td style="font-weight: normal; font-style: italic;">${item.kommentti}</td>
-                        <td><button onclick="avaaTiedot('${item.id}')" style="padding: 6px 12px; background-color: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">✏️ Avaa & Kuittaa</button></td>
-                    </tr>`;
+                html += `<tr style="background-color: ${riviTausta}; font-weight: bold;">
+                            <td style="color: #2c3e50; font-size: 15px;">${idTeksti}</td><td>${prioTeksti}</td>
+                            <td>${item.tyoNumero}</td><td style="${tyyppiTyyli}">${item.tyoTyyppi}</td>
+                            <td style="color: #c0392b;">${item.otsikko}</td>
+                            <td>${item.sijainti}</td><td style="font-weight: normal; font-style: italic;">${item.kommentti}</td>
+                            <td><button onclick="avaaTiedot('${item.id}')" style="padding: 6px 12px; background-color: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">✏️ Avaa & Kuittaa</button></td>
+                        </tr>`;
+            });
         });
+        
         html += `</tbody></table>`;
     }
     viatTauluAlue.innerHTML = html;
