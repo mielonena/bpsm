@@ -29,3 +29,48 @@ let keskitettyVaraosaHaku = "";
 const supabaseUrl = 'https://hpwsekjtjdsyugjrswri.supabase.co';
 const supabaseKey = 'sb_publishable_44-9RfCR4zmmKmm3dWL4kw_b4elVyzu';
 const supabaseclient = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+// ========================================== //
+// === 3. EVÄSTEIDEN HALLINTA (GDPR)      === //
+// ========================================== //
+
+function tarkistaEvasteSuostumus() {
+    // Tarkistetaan selaimen muistista, onko suostumus jo annettu
+    const suostumus = localStorage.getItem("cookie_consent_level");
+    
+    // Jos suostumusta ei löydy, näytetään banneri
+    if (!suostumus) {
+        document.getElementById("cookie-banner").style.display = "block";
+    } else {
+        // Tässä voitaisiin laukaista analytiikka, jos käyttäjä on valinnut 'kaikki'
+        // esim. if (suostumus === 'kaikki') kaynnistaAnalytiikka();
+    }
+}
+
+function hyvaksyEvasteet(taso) {
+    // taso on joko 'valttamattomat' tai 'kaikki'
+    
+    // Tallennetaan käyttäjän valinta ja päivämäärä
+    localStorage.setItem("cookie_consent_level", taso);
+    localStorage.setItem("cookie_consent_date", new Date().toISOString());
+    
+    // Piilotetaan banneri animoidusti (fade out)
+    const banner = document.getElementById("cookie-banner");
+    banner.style.transition = "opacity 0.5s";
+    banner.style.opacity = "0";
+    
+    setTimeout(() => {
+        banner.style.display = "none";
+    }, 500);
+
+    // Jos valittiin kaikki, ja sinulla on Google Analytics tms., käynnistä se tässä.
+    if (taso === 'kaikki') {
+        console.log("Kaikki evästeet hyväksytty. Analytiikan voi käynnistää.");
+        // kaynnistaGoogleAnalytics();
+    } else {
+        console.log("Vain välttämättömät evästeet hyväksytty.");
+    }
+}
+
+// Suoritetaan tarkistus automaattisesti kun sivu on latautunut
+window.addEventListener("DOMContentLoaded", tarkistaEvasteSuostumus);
