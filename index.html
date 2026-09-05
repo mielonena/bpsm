@@ -689,6 +689,27 @@
 
     <div id="rata-tooltip" style="position: absolute; display: none; background: rgba(0, 0, 0, 0.8); color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; pointer-events: none; z-index: 10000; white-space: nowrap; transform: translate(15px, 15px);"></div>
 </div>
+<!-- EVÄSTEBANNERI (GDPR) -->
+<div id="cookie-banner" style="display: none; position: fixed; bottom: 0; left: 0; width: 100%; background-color: #2c3e50; color: #ecf0f1; padding: 20px 0; z-index: 9999; box-shadow: 0 -4px 10px rgba(0,0,0,0.2); font-family: Arial, sans-serif;">
+    <div style="max-width: 1000px; margin: 0 auto; padding: 0 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between;">
+        
+        <div style="flex: 1; min-width: 300px;">
+            <h4 style="margin: 0 0 10px 0; color: #3498db;">🍪 Evästeiden käyttö</h4>
+            <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #bdc3c7;">
+                Käytämme sivustolla evästeitä ja selaimen paikallista muistia (Local Storage) varmistaaksemme järjestelmän toimivuuden (mm. turvallinen sisäänkirjautuminen). Voit hyväksyä vain järjestelmän toiminnalle välttämättömät evästeet tai sallia kaikki evästeet mahdollista analytiikkaa varten.
+            </p>
+        </div>
 
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button onclick="hyvaksyEvasteet('valttamattomat')" style="padding: 10px 20px; border: 1px solid #7f8c8d; background: transparent; color: #ecf0f1; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s;" onmouseover="this.style.backgroundColor='#34495e'" onmouseout="this.style.backgroundColor='transparent'">
+                Vain välttämättömät
+            </button>
+            <button onclick="hyvaksyEvasteet('kaikki')" style="padding: 10px 20px; border: none; background: #27ae60; color: white; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s;" onmouseover="this.style.backgroundColor='#2ecc71'" onmouseout="this.style.backgroundColor='#27ae60'">
+                Hyväksy kaikki
+            </button>
+        </div>
+
+    </div>
+</div>
 </body>
 </html>
