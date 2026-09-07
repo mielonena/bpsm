@@ -173,7 +173,7 @@
     .lista-positio-nappi:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-        color: #5b42f3;
+        color: #34495e;
     }
 
     /* --- TAULUKOIDEN TYYLIT (Historia ja Vikatilasto) --- */
