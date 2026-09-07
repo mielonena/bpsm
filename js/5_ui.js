@@ -163,7 +163,7 @@ function generoiListanakyma() {
         const onVetoasema = (l) => l.id.toLowerCase().includes("vetoasema") || l.nimi.toLowerCase().includes("vetoasema") || l.parentId.toLowerCase().includes("vetoasema");
         const onKaarre = (l) => l.id.toLowerCase().includes("kaarre") || l.nimi.toLowerCase().includes("kaarre") || l.parentId.toLowerCase().includes("kaarre");
         const onYla = (l) => l.id.toLowerCase().includes("ylä") || l.nimi.toLowerCase().includes("ylä") || l.parentId.toLowerCase().includes("yla") || l.id.toUpperCase().includes("SO01") || l.nimi.toUpperCase().includes("SO01");
-        
+        const onKamera = (l) => l.id.toLowerCase().includes("kameratunneli") || l.nimi.toLowerCase().includes("kameratunneli") || l.parentId.toLowerCase().includes("kameratunneli");
         // LISÄTTY: u.includes("DI01") tunnistaa OU01.DI011 ja DI012 kaapit sähkölistalle!
         const onSahkokaappi = (l) => {
             const u = l.id.toUpperCase();
@@ -178,64 +178,10 @@ function generoiListanakyma() {
 
         let html = "<h2 style='margin-top: 0; color: #2c3e50; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;'>Kaikki laitteet ja linjastot luettelona 📋</h2>";
         
-        // ========================================== //
-        // 1. LINJAT JA LUISUT
-        // ========================================== //
-        html += "<h3 style='color: #2c3e50; margin-top: 25px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>Linjat ja luisut (Kulku H ➔ A)</h3>";
-
-        const riviMaarittelyt = [
-            { riviNimi: "Linja H", sarjat: [{ tag: "H1", info: "951 - 960", kuuluu: (n) => n >= 951 && n <= 960, suunta: "asc" }, { tag: "H2", info: "971", kuuluu: (n) => n === 971, suunta: "asc" }] },
-            { riviNimi: "Linja G", sarjat: [{ tag: "G1", info: "901 - 910", kuuluu: (n) => n >= 901 && n <= 910, suunta: "asc" }] },
-            { riviNimi: "Linja F", sarjat: [{ tag: "F1", info: "829 - 821", kuuluu: (n) => n >= 821 && n <= 829, suunta: "desc" }, { tag: "F2", info: "805 - 801", kuuluu: (n) => n >= 801 && n <= 805, suunta: "desc" }] },
-            { riviNimi: "Linja E", sarjat: [{ tag: "E1", info: "879 - 871", kuuluu: (n) => n >= 871 && n <= 879, suunta: "desc" }, { tag: "E2", info: "855 - 851", kuuluu: (n) => n >= 851 && n <= 855, suunta: "desc" }] },
-            { riviNimi: "Linja D", sarjat: [{ tag: "D1", info: "751 - 777", kuuluu: (n) => n >= 751 && n <= 777, suunta: "asc" }] },
-            { riviNimi: "Linja C", sarjat: [{ tag: "C1", info: "701 - 728", kuuluu: (n) => n >= 701 && n <= 728, suunta: "asc" }] },
-            { riviNimi: "Linja B", sarjat: [{ tag: "B1", info: "642 - 621 + 611", kuuluu: (n) => (n >= 621 && n <= 642) || n === 611, suunta: "custom_b1" }, { tag: "B2", info: "606 - 601", kuuluu: (n) => n >= 601 && n <= 606, suunta: "desc" }] },
-            { riviNimi: "Linja A", sarjat: [{ tag: "A1", info: "692 - 671 + 661", kuuluu: (n) => (n >= 671 && n <= 692) || n === 661, suunta: "custom_a1" }, { tag: "A2", info: "656 - 651", kuuluu: (n) => n >= 651 && n <= 656, suunta: "desc" }] }
-        ];
-
-        riviMaarittelyt.forEach(rivi => {
-            html += `
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid #34495e; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                <h3 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">${rivi.riviNimi}</h3>
-                <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
-            `;
-            rivi.sarjat.forEach((sarja, sIndex) => {
-                if (sIndex > 0) html += `<div style="width: 1px; background: #cbd5e1; align-self: stretch; margin: 0 5px; min-height: 40px;"></div>`;
-                
-                let sarjanLaitteet = kaikkiLaitteet.filter(laite => {
-                    if (sijoitetutAvaimet.has(laite.id)) return false; 
-                    if (onVetoasema(laite) || onKaarre(laite) || onSahkokaappi(laite)) return false;
-                    
-                    const n = poimiNumero(laite.nimi);
-                    const parentN = poimiNumero(laite.parentId);
-                    return (n !== null && sarja.kuuluu(n)) || (parentN !== null && sarja.kuuluu(parentN));
-                });
-
-                if (sarja.suunta === "asc") sarjanLaitteet.sort((a, b) => (poimiNumero(a.nimi) || 0) - (poimiNumero(b.nimi) || 0));
-                else if (sarja.suunta === "desc") sarjanLaitteet.sort((a, b) => (poimiNumero(b.nimi) || 0) - (poimiNumero(a.nimi) || 0));
-                else if (sarja.suunta === "custom_b1") sarjanLaitteet.sort((a, b) => { const nA = poimiNumero(a.nimi) || 0, nB = poimiNumero(b.nimi) || 0; if (nA === 611) return 1; if (nB === 611) return -1; return nB - nA; });
-                else if (sarja.suunta === "custom_a1") sarjanLaitteet.sort((a, b) => { const nA = poimiNumero(a.nimi) || 0, nB = poimiNumero(b.nimi) || 0; if (nA === 661) return 1; if (nB === 661) return -1; return nB - nA; });
-
-                sarjanLaitteet.forEach(l => sijoitetutAvaimet.add(l.id));
-
-                html += `
-                <div style="flex: 1; min-width: 240px;">
-                    <div style="margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                        <span style="background: #34495e; color: #ffffff; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px;">${sarja.tag}</span>
-                        <span style="font-size: 12px; color: #7f8c8d; font-style: italic;">(${sarja.info})</span>
-                    </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                `;
-                if (sarjanLaitteet.length === 0) html += `<span style="font-size: 12px; color: #cbd5e1; font-style: italic;">Ei laitteita linjalla</span>`;
-                else sarjanLaitteet.forEach(pos => html += `<button class="lista-positio-nappi" data-tiedot-id="${pos.id}" onclick="${pos.onclickAttr}" style="padding: 6px 12px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer;">${pos.nimi}</button>`);
-                html += `</div></div>`;
-            });
-            html += `</div></div>`;
-        });
+        
 
         // ========================================== //
-        // 2. KL-KULJETTIMET
+        // 1. KL-KULJETTIMET
         // ========================================== //
         html += "<h3 style='color: #2c3e50; margin-top: 35px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>KL-Kuljettimet ryhmittäin</h3>";
         const klRyhmat = { "KL1": [], "KL2": [], "KL3": [], "KL4": [], "KL5": [], "KL6": [], "KL7": [] };
@@ -292,7 +238,61 @@ function generoiListanakyma() {
             html += `</div></div>`;
         });
         html += "</div>";
+// ========================================== //
+        // 2. LINJAT JA LUISUT
+        // ========================================== //
+        html += "<h3 style='color: #2c3e50; margin-top: 25px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>Linjat ja luisut (Kulku H ➔ A)</h3>";
 
+        const riviMaarittelyt = [
+            { riviNimi: "Linja H", sarjat: [{ tag: "H1", info: "951 - 960", kuuluu: (n) => n >= 951 && n <= 960, suunta: "asc" }, { tag: "H2", info: "971", kuuluu: (n) => n === 971, suunta: "asc" }] },
+            { riviNimi: "Linja G", sarjat: [{ tag: "G1", info: "901 - 910", kuuluu: (n) => n >= 901 && n <= 910, suunta: "asc" }] },
+            { riviNimi: "Linja F", sarjat: [{ tag: "F1", info: "829 - 821", kuuluu: (n) => n >= 821 && n <= 829, suunta: "desc" }, { tag: "F2", info: "805 - 801", kuuluu: (n) => n >= 801 && n <= 805, suunta: "desc" }] },
+            { riviNimi: "Linja E", sarjat: [{ tag: "E1", info: "879 - 871", kuuluu: (n) => n >= 871 && n <= 879, suunta: "desc" }, { tag: "E2", info: "855 - 851", kuuluu: (n) => n >= 851 && n <= 855, suunta: "desc" }] },
+            { riviNimi: "Linja D", sarjat: [{ tag: "D1", info: "751 - 777", kuuluu: (n) => n >= 751 && n <= 777, suunta: "asc" }] },
+            { riviNimi: "Linja C", sarjat: [{ tag: "C1", info: "701 - 728", kuuluu: (n) => n >= 701 && n <= 728, suunta: "asc" }] },
+            { riviNimi: "Linja B", sarjat: [{ tag: "B1", info: "642 - 621 + 611", kuuluu: (n) => (n >= 621 && n <= 642) || n === 611, suunta: "custom_b1" }, { tag: "B2", info: "606 - 601", kuuluu: (n) => n >= 601 && n <= 606, suunta: "desc" }] },
+            { riviNimi: "Linja A", sarjat: [{ tag: "A1", info: "692 - 671 + 661", kuuluu: (n) => (n >= 671 && n <= 692) || n === 661, suunta: "custom_a1" }, { tag: "A2", info: "656 - 651", kuuluu: (n) => n >= 651 && n <= 656, suunta: "desc" }] }
+        ];
+
+        riviMaarittelyt.forEach(rivi => {
+            html += `
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid #34495e; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">${rivi.riviNimi}</h3>
+                <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+            `;
+            rivi.sarjat.forEach((sarja, sIndex) => {
+                if (sIndex > 0) html += `<div style="width: 1px; background: #cbd5e1; align-self: stretch; margin: 0 5px; min-height: 40px;"></div>`;
+                
+                let sarjanLaitteet = kaikkiLaitteet.filter(laite => {
+                    if (sijoitetutAvaimet.has(laite.id)) return false; 
+                    if (onVetoasema(laite) || onKaarre(laite) || onSahkokaappi(laite)) return false;
+                    
+                    const n = poimiNumero(laite.nimi);
+                    const parentN = poimiNumero(laite.parentId);
+                    return (n !== null && sarja.kuuluu(n)) || (parentN !== null && sarja.kuuluu(parentN));
+                });
+
+                if (sarja.suunta === "asc") sarjanLaitteet.sort((a, b) => (poimiNumero(a.nimi) || 0) - (poimiNumero(b.nimi) || 0));
+                else if (sarja.suunta === "desc") sarjanLaitteet.sort((a, b) => (poimiNumero(b.nimi) || 0) - (poimiNumero(a.nimi) || 0));
+                else if (sarja.suunta === "custom_b1") sarjanLaitteet.sort((a, b) => { const nA = poimiNumero(a.nimi) || 0, nB = poimiNumero(b.nimi) || 0; if (nA === 611) return 1; if (nB === 611) return -1; return nB - nA; });
+                else if (sarja.suunta === "custom_a1") sarjanLaitteet.sort((a, b) => { const nA = poimiNumero(a.nimi) || 0, nB = poimiNumero(b.nimi) || 0; if (nA === 661) return 1; if (nB === 661) return -1; return nB - nA; });
+
+                sarjanLaitteet.forEach(l => sijoitetutAvaimet.add(l.id));
+
+                html += `
+                <div style="flex: 1; min-width: 240px;">
+                    <div style="margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <span style="background: #34495e; color: #ffffff; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px;">${sarja.tag}</span>
+                        <span style="font-size: 12px; color: #7f8c8d; font-style: italic;">(${sarja.info})</span>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                `;
+                if (sarjanLaitteet.length === 0) html += `<span style="font-size: 12px; color: #cbd5e1; font-style: italic;">Ei laitteita linjalla</span>`;
+                else sarjanLaitteet.forEach(pos => html += `<button class="lista-positio-nappi" data-tiedot-id="${pos.id}" onclick="${pos.onclickAttr}" style="padding: 6px 12px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer;">${pos.nimi}</button>`);
+                html += `</div></div>`;
+            });
+            html += `</div></div>`;
+        });
         // ========================================== //
         // 3. VETOASEMAT
         // ========================================== //
@@ -352,7 +352,36 @@ function generoiListanakyma() {
         html += `</div></div></div>`;
 
         // ========================================== //
-        // 5. SÄHKÖKAAPIT JA KESKUKSET (UUSI JAOTTELU)
+        // 5. KAMERATUNNELIT
+        // ========================================== //
+        html += "<h3 style='color: #2c3e50; margin-top: 35px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>Kameratunnelit</h3>";
+        let kameraYla = kaikkiLaitteet.filter(l => onKamera(l) && onYla(l) && !sijoitetutAvaimet.has(l.id));
+        let kameraAla = kaikkiLaitteet.filter(l => onKamera(l) && !onYla(l) && !sijoitetutAvaimet.has(l.id));
+        kameraYla.forEach(l => sijoitetutAvaimet.add(l.id)); kameraAla.forEach(l => sijoitetutAvaimet.add(l.id));
+        kameraYla.sort((a, b) => a.nimi.localeCompare(b.nimi, undefined, { numeric: true }));
+        kameraAla.sort((a, b) => a.nimi.localeCompare(b.nimi, undefined, { numeric: true }));
+
+        html += `
+        <div style='display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px;'>
+            <div style='flex: 1; min-width: 280px; background: #ffffff; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; border-left: 4px solid #2ecc71;'>
+                <h4 style="margin: 0 0 10px 0; color: #27ae60; font-size: 14px; font-weight: bold;">🔼 Yläkoneen kameratunnelit</h4>
+                <div style='display: flex; flex-wrap: wrap; gap: 6px;'>
+        `;
+        if(kameraYla.length === 0) html += `<span style="font-size: 12px; color: #cbd5e1; font-style: italic;">Ei kameratunneleita</span>`;
+        else kameraYla.forEach(item => html += `<button class='lista-positio-nappi' data-tiedot-id="${item.id}" onclick="${item.onclickAttr}">${item.nimi}</button>`);
+        html += `</div></div>`;
+
+        html += `
+            <div style='flex: 1; min-width: 280px; background: #ffffff; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; border-left: 4px solid #3498db;'>
+                <h4 style="margin: 0 0 10px 0; color: #2980b9; font-size: 14px; font-weight: bold;">🔽 Alakoneen kameratunnelit</h4>
+                <div style='display: flex; flex-wrap: wrap; gap: 6px;'>
+        `;
+        if(kameraAla.length === 0) html += `<span style="font-size: 12px; color: #cbd5e1; font-style: italic;">Ei kameratunneleita</span>`;
+        else kameraAla.forEach(item => html += `<button class='lista-positio-nappi' data-tiedot-id="${item.id}" onclick="${item.onclickAttr}">${item.nimi}</button>`);
+        html += `</div></div></div>`;
+
+        // ========================================== //
+        // 6. SÄHKÖKAAPIT JA KESKUKSET (UUSI JAOTTELU)
         // ========================================== //
         html += "<h3 style='color: #d35400; margin-top: 35px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>Sähkökaapit ja -keskukset ⚡</h3>";
         
@@ -422,7 +451,7 @@ function generoiListanakyma() {
         html += "</div>";
 
         // ========================================== //
-        // 6. MUUT JÄRJESTELMÄN OSAT
+        // 7. MUUT JÄRJESTELMÄN OSAT
         // ========================================== //
         const todellisetMuut = kaikkiLaitteet.filter(l => !sijoitetutAvaimet.has(l.id));
         if (todellisetMuut.length > 0) {
