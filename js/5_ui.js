@@ -171,7 +171,7 @@ function generoiListanakyma() {
         { riviNimi: "Linja E", sarjat: [{ tag: "E1", info: "879 - 871", kuuluu: (n) => n >= 871 && n <= 879, suunta: "desc" }, { tag: "E2", info: "855 - 851", kuuluu: (n) => n >= 851 && n <= 855, suunta: "desc" }] },
         { riviNimi: "Linja D", sarjat: [{ tag: "D1", info: "751 - 777", kuuluu: (n) => n >= 751 && n <= 777, suunta: "asc" }] },
         { riviNimi: "Linja C", sarjat: [{ tag: "C1", info: "701 - 728", kuuluu: (n) => n >= 701 && n <= 728, suunta: "asc" }] },
-        { riviNimi: "Linja B", sarjat: [{ tag: "B1", info: "639 - 621 + 611", kuuluu: (n) => (n >= 621 && n <= 639) || n === 611, suunta: "custom_b1" }, { tag: "B2", info: "606 - 601", kuuluu: (n) => n >= 601 && n <= 606, suunta: "desc" }] },
+        { riviNimi: "Linja B", sarjat: [{ tag: "B1", info: "642 - 621 + 611", kuuluu: (n) => (n >= 621 && n <= 642) || n === 611, suunta: "custom_b1" }, { tag: "B2", info: "606 - 601", kuuluu: (n) => n >= 601 && n <= 606, suunta: "desc" }] },
         { riviNimi: "Linja A", sarjat: [{ tag: "A1", info: "692 - 671 + 661", kuuluu: (n) => (n >= 671 && n <= 692) || n === 661, suunta: "custom_a1" }, { tag: "A2", info: "656 - 651", kuuluu: (n) => n >= 651 && n <= 656, suunta: "desc" }] }
     ];
 
