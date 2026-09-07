@@ -1,132 +1,3 @@
-// ========================================== //
-// === 6. KÄYTTÖLIITTYMÄ JA NAVIGOINTI ====== //
-// ========================================== //
-
-function erotteleLaiteTiedot(id) {
-    if (id && id.includes(" - ")) {
-        const index = id.indexOf(" - ");
-        const ryhma = id.substring(0, index).trim();
-        const nimi = id.substring(index + 3).trim();
-        return { ryhma: ryhma, nimi: nimi };
-    }
-    return { ryhma: "", nimi: id };
-}
-
-function vaihdaTaso(taso) {
-    document.querySelectorAll(".taso-nappi").forEach(btn => btn.classList.remove("aktiivinen"));
-    
-    const ylaNakyma = document.getElementById("nakyma-yla"); 
-    const alaNakyma = document.getElementById("nakyma-ala");
-    const ylaRata = document.getElementById("taso-yla"); 
-    const alaRata = document.getElementById("taso-ala");
-    const karttaAlue = document.querySelector(".kartta-alue"); 
-    const listaAlue = document.getElementById("lista-alue");
-    const viatAlue = document.getElementById("viat-alue"); 
-    const historiaAlue = document.getElementById("historia-alue");
-    const varaosatAlue = document.getElementById("varaosat-alue");
-    const kaapitAlue = document.getElementById("kaapit-alue");
-
-    if(karttaAlue) karttaAlue.style.display = "none"; 
-    if(listaAlue) listaAlue.style.display = "none";
-    if(viatAlue) viatAlue.style.display = "none"; 
-    if (historiaAlue) historiaAlue.style.display = "none";
-    if (varaosatAlue) varaosatAlue.style.display = "none";
-    if(kaapitAlue) kaapitAlue.style.display = "none";
-
-    if (taso === 'lista') {
-        document.getElementById("btnLista").classList.add("aktiivinen");
-        if(listaAlue) listaAlue.style.display = "block";
-    } else if (taso === 'viat') {
-        document.getElementById("btnViat").classList.add("aktiivinen");
-        if(viatAlue) viatAlue.style.display = "block"; 
-        paivitaVikaLista(); 
-    } else if (taso === 'historia') {
-        const btnHist = document.getElementById("btnKokoHistoria");
-        if (btnHist) btnHist.classList.add("aktiivinen");
-        if (historiaAlue) historiaAlue.style.display = "block";
-        paivitaKokoHistoriaNakyma(); 
-    } else if (taso === 'varaosat') {
-        const btnVar = document.getElementById("btnVaraosat");
-        if (btnVar) btnVar.classList.add("aktiivinen");
-        if (varaosatAlue) varaosatAlue.style.display = "block";
-        generoiKaikkiVaraosatNakyma(); 
-   } else if (taso === 'kaapit') {
-        const btnKaapit = document.getElementById("btnKaapit");
-        if (btnKaapit) btnKaapit.classList.add("aktiivinen");
-        if (kaapitAlue) kaapitAlue.style.display = "block";
-    } else {
-        if(karttaAlue) karttaAlue.style.display = "block";
-        if (taso === 'yla') {
-            document.getElementById("btnYla").classList.add("aktiivinen");
-            if(ylaNakyma) ylaNakyma.style.display = "block"; 
-            if(alaNakyma) alaNakyma.style.display = "none";
-            if (ylaRata) ylaRata.style.display = "block"; 
-            if (alaRata) alaRata.style.display = "none";
-        } else if (taso === 'ala') {
-            document.getElementById("btnAla").classList.add("aktiivinen");
-            if(ylaNakyma) ylaNakyma.style.display = "none"; 
-            if(alaNakyma) alaNakyma.style.display = "block";
-            if (ylaRata) ylaRata.style.display = "none"; 
-            if (alaRata) alaRata.style.display = "block";
-        } else if (taso === 'kaikki') {
-            document.getElementById("btnKaikki").classList.add("aktiivinen");
-            if(ylaNakyma) ylaNakyma.style.display = "block"; 
-            if(alaNakyma) alaNakyma.style.display = "block";
-            if (ylaRata) ylaRata.style.display = "block"; 
-            if (alaRata) alaRata.style.display = "block";
-        }
-    }
-}
-
-function vaihdaPeruskunnostusNakyma() {
-    const nappi = document.getElementById("btnPeruskunnostetut");
-    const filtteriValikko = document.getElementById("peruskunnostusFiltteri");
-    const vuosiValikko = document.getElementById("pk-vuosi-asetus");
-
-    peruskunnostusNakymaPaalla = !peruskunnostusNakymaPaalla;
-    
-    if (peruskunnostusNakymaPaalla) {
-        nappi.classList.add("aktiivinen"); 
-        nappi.style.backgroundColor = "#2ecc71"; 
-        nappi.style.color = "white";
-        if (filtteriValikko) filtteriValikko.style.display = "inline-block";
-        if (vuosiValikko) vuosiValikko.style.display = "inline-block";
-    } else {
-        nappi.classList.remove("aktiivinen"); 
-        nappi.style.backgroundColor = ""; 
-        nappi.style.color = "";
-        if (filtteriValikko) { 
-            filtteriValikko.style.display = "none"; 
-            filtteriValikko.value = "Kaikki"; 
-        }
-        if (vuosiValikko) { 
-            vuosiValikko.style.display = "none";
-        }
-    }
-    paivitaPeruskunnostetutKartalle();
-}
-
-function vaihdaValilehti(evt, tabId) {
-    const tabcontent = document.getElementsByClassName("tab-content");
-    for (let i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].style.display = "none";
-    }
-    const tablinks = document.getElementsByClassName("tab-btn");
-    for (let i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" active", "");
-        tablinks[i].style.backgroundColor = "#f1f1f1";
-        tablinks[i].style.color = "#333";
-        tablinks[i].style.fontWeight = "normal";
-    }
-    if(document.getElementById(tabId)) document.getElementById(tabId).style.display = "block";
-    if (evt && evt.currentTarget) {
-        evt.currentTarget.className += " active";
-        evt.currentTarget.style.backgroundColor = "#007bff";
-        evt.currentTarget.style.color = "white";
-        evt.currentTarget.style.fontWeight = "bold";
-    }
-}
-
 function generoiListanakyma() {
     const listaAlue = document.getElementById("lista-alue");
     if (!listaAlue) return;
@@ -152,9 +23,14 @@ function generoiListanakyma() {
     const kaikkiLaitteet = Array.from(laitteetMap.values());
     const sijoitetutAvaimet = new Set();
 
+    // TUNNISTUSFUNKTIOT
     const onVetoasema = (l) => l.id.toLowerCase().includes("vetoasema") || l.nimi.toLowerCase().includes("vetoasema") || l.parentId.includes("vetoasema");
     const onKaarre = (l) => l.id.toLowerCase().includes("kaarre") || l.nimi.toLowerCase().includes("kaarre") || l.parentId.includes("kaarre");
     const onYla = (l) => l.id.toLowerCase().includes("ylä") || l.nimi.toLowerCase().includes("ylä") || l.parentId.includes("yla") || l.id.toUpperCase().includes("SO01") || l.nimi.toUpperCase().includes("SO01");
+    const onSahkokaappi = (l) => {
+        const u = l.id.toUpperCase();
+        return u.includes("SD0") || u.includes("PT0") || u.includes(".CC0") || u.includes("ED0") || u.includes("AD0") || u.includes("A011") || u.includes("A012");
+    };
 
     function poimiNumero(str) {
         const matches = str.match(/\d+/g);
@@ -162,6 +38,10 @@ function generoiListanakyma() {
     }
 
     let html = "<h2 style='margin-top: 0; color: #2c3e50; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;'>Kaikki laitteet ja linjastot luettelona 📋</h2>";
+    
+    // ========================================== //
+    // 1. LINJAT JA LUISUT
+    // ========================================== //
     html += "<h3 style='color: #2c3e50; margin-top: 25px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>Linjat ja luisut (Kulku H ➔ A)</h3>";
 
     const riviMaarittelyt = [
@@ -183,9 +63,12 @@ function generoiListanakyma() {
         `;
         rivi.sarjat.forEach((sarja, sIndex) => {
             if (sIndex > 0) html += `<div style="width: 1px; background: #cbd5e1; align-self: stretch; margin: 0 5px; min-height: 40px;"></div>`;
+            
             let sarjanLaitteet = kaikkiLaitteet.filter(laite => {
                 if (sijoitetutAvaimet.has(laite.id)) return false; 
-                if (onVetoasema(laite) || onKaarre(laite)) return false;
+                // Estetään sähkökaappien osuminen linjoihin (jos nimi on esim. numero)
+                if (onVetoasema(laite) || onKaarre(laite) || onSahkokaappi(laite)) return false;
+                
                 const n = poimiNumero(laite.nimi);
                 const parentN = poimiNumero(laite.parentId);
                 return (n !== null && sarja.kuuluu(n)) || (parentN !== null && sarja.kuuluu(parentN));
@@ -213,6 +96,9 @@ function generoiListanakyma() {
         html += `</div></div>`;
     });
 
+    // ========================================== //
+    // 2. KL-KULJETTIMET
+    // ========================================== //
     html += "<h3 style='color: #2c3e50; margin-top: 35px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>KL-Kuljettimet ryhmittäin</h3>";
     const klRyhmat = { "KL1": [], "KL2": [], "KL3": [], "KL4": [], "KL5": [], "KL6": [], "KL7": [] };
 
@@ -232,7 +118,8 @@ function generoiListanakyma() {
     }
     
     kaikkiLaitteet.forEach(laite => {
-        if (!sijoitetutAvaimet.has(laite.id) && !onVetoasema(laite) && !onKaarre(laite)) {
+        // Varmistetaan taas, ettei sähkökaappi vahingossa joudu KL-listalle
+        if (!sijoitetutAvaimet.has(laite.id) && !onVetoasema(laite) && !onKaarre(laite) && !onSahkokaappi(laite)) {
             const klTunnus = haeKLRyhma(laite);
             if (klTunnus && klRyhmat[klTunnus]) {
                 klRyhmat[klTunnus].push(laite);
@@ -269,9 +156,12 @@ function generoiListanakyma() {
     });
     html += "</div>";
 
+    // ========================================== //
+    // 3. VETOASEMAT
+    // ========================================== //
     html += "<h3 style='color: #2c3e50; margin-top: 35px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>Vetoasemat</h3>";
-    let vetoYla = kaikkiLaitteet.filter(l => onVetoasema(l) && onYla(l));
-    let vetoAla = kaikkiLaitteet.filter(l => onVetoasema(l) && !onYla(l));
+    let vetoYla = kaikkiLaitteet.filter(l => onVetoasema(l) && onYla(l) && !sijoitetutAvaimet.has(l.id));
+    let vetoAla = kaikkiLaitteet.filter(l => onVetoasema(l) && !onYla(l) && !sijoitetutAvaimet.has(l.id));
     vetoYla.forEach(l => sijoitetutAvaimet.add(l.id)); vetoAla.forEach(l => sijoitetutAvaimet.add(l.id));
     vetoYla.sort((a, b) => a.nimi.localeCompare(b.nimi, undefined, { numeric: true }));
     vetoAla.sort((a, b) => a.nimi.localeCompare(b.nimi, undefined, { numeric: true }));
@@ -295,9 +185,12 @@ function generoiListanakyma() {
     else vetoAla.forEach(item => html += `<button class='lista-positio-nappi' data-tiedot-id="${item.id}" onclick="${item.onclickAttr}">${item.nimi}</button>`);
     html += `</div></div></div>`;
 
+    // ========================================== //
+    // 4. KAARTEET
+    // ========================================== //
     html += "<h3 style='color: #2c3e50; margin-top: 35px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>Kaarteet</h3>";
-    let kaarreYla = kaikkiLaitteet.filter(l => onKaarre(l) && onYla(l));
-    let kaarreAla = kaikkiLaitteet.filter(l => onKaarre(l) && !onYla(l));
+    let kaarreYla = kaikkiLaitteet.filter(l => onKaarre(l) && onYla(l) && !sijoitetutAvaimet.has(l.id));
+    let kaarreAla = kaikkiLaitteet.filter(l => onKaarre(l) && !onYla(l) && !sijoitetutAvaimet.has(l.id));
     kaarreYla.forEach(l => sijoitetutAvaimet.add(l.id)); kaarreAla.forEach(l => sijoitetutAvaimet.add(l.id));
     kaarreYla.sort((a, b) => a.nimi.localeCompare(b.nimi, undefined, { numeric: true }));
     kaarreAla.sort((a, b) => a.nimi.localeCompare(b.nimi, undefined, { numeric: true }));
@@ -321,6 +214,45 @@ function generoiListanakyma() {
     else kaarreAla.forEach(item => html += `<button class='lista-positio-nappi' data-tiedot-id="${item.id}" onclick="${item.onclickAttr}">${item.nimi}</button>`);
     html += `</div></div></div>`;
 
+    // ========================================== //
+    // 5. UUSI: SÄHKÖKAAPIT JA KESKUKSET
+    // ========================================== //
+    html += "<h3 style='color: #d35400; margin-top: 35px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>Sähkökaapit ja -keskukset ⚡</h3>";
+    
+    let kaapit = kaikkiLaitteet.filter(l => onSahkokaappi(l) && !sijoitetutAvaimet.has(l.id));
+    kaapit.forEach(l => sijoitetutAvaimet.add(l.id));
+    
+    // Ryhmitellään kaapit loogisesti pääkeskusten alle
+    const kaappiRyhmat = { "SO01 Pääkeskus": [], "SO02 Pääkeskus": [], "OU01 Alakeskus": [], "Muut sähkökomponentit": [] };
+    kaapit.forEach(k => {
+        const u = k.id.toUpperCase();
+        if (u.includes("SO01")) kaappiRyhmat["SO01 Pääkeskus"].push(k);
+        else if (u.includes("SO02")) kaappiRyhmat["SO02 Pääkeskus"].push(k);
+        else if (u.includes("OU01")) kaappiRyhmat["OU01 Alakeskus"].push(k);
+        else kaappiRyhmat["Muut sähkökomponentit"].push(k);
+    });
+
+    html += "<div style='display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px;'>";
+    Object.keys(kaappiRyhmat).forEach(ryhma => {
+        if (kaappiRyhmat[ryhma].length === 0) return;
+        
+        kaappiRyhmat[ryhma].sort((a, b) => a.nimi.localeCompare(b.nimi, undefined, { numeric: true }));
+        
+        html += `
+        <div style='background: #ffffff; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; border-top: 4px solid #f39c12; box-shadow: 0 1px 3px rgba(0,0,0,0.02);'>
+            <h4 style="margin: 0 0 10px 0; color: #d35400; font-size: 14px; font-weight: bold; text-transform: uppercase;">⚡ ${ryhma}</h4>
+            <div style='display: flex; flex-wrap: wrap; gap: 6px;'>
+        `;
+        kaappiRyhmat[ryhma].forEach(item => {
+            html += `<button class='lista-positio-nappi' data-tiedot-id="${item.id}" onclick="${item.onclickAttr}" style="background-color: #ecf0f1; border: 1px solid #bdc3c7; color: #2c3e50; font-weight: bold;">${item.nimi}</button>`;
+        });
+        html += `</div></div>`;
+    });
+    html += "</div>";
+
+    // ========================================== //
+    // 6. MUUT JÄRJESTELMÄN OSAT (Jäljelle jäävät)
+    // ========================================== //
     const todellisetMuut = kaikkiLaitteet.filter(l => !sijoitetutAvaimet.has(l.id));
     if (todellisetMuut.length > 0) {
         html += `
@@ -331,5 +263,6 @@ function generoiListanakyma() {
         todellisetMuut.forEach(pos => html += `<button class="lista-positio-nappi" data-tiedot-id="${pos.id}" onclick="${pos.onclickAttr}">${pos.nimi}</button>`);
         html += `</div></div>`;
     }
+    
     listaAlue.innerHTML = html;
 }
