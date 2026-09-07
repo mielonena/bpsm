@@ -196,8 +196,8 @@ function luoKaappi(x, y, w, h, nimi, otsikko = nimi, tyyppi = "normaali") {
         let id = `SO01.SD00${i}`;
         luoKaappi(sdX, 150, 120, 100, id, id, "matala");
         // Sisäkaapit A011 & A012 (keskitetty SD-kaapin sisään yläreunaan)
-        luoKaappi(sdX + 10, 160, 45, 20, `${id}.A011`, "A011", "sisamoduli");
-        luoKaappi(sdX + 65, 160, 45, 20, `${id}.A012`, "A012", "sisamoduli");
+// --- poistettu käytöstä              luoKaappi(sdX + 10, 160, 45, 20, `${id}.A011`, "A011", "sisamoduli");
+// --- poistettu käytöstä              luoKaappi(sdX + 65, 160, 45, 20, `${id}.A012`, "A012", "sisamoduli");
         sdX += 140;
     }
 
@@ -216,8 +216,8 @@ function luoKaappi(x, y, w, h, nimi, otsikko = nimi, tyyppi = "normaali") {
     for (let i = 1; i <= 4; i++) {
         let id = `SO02.SD00${i}`;
         luoKaappi(sdX, 450, 120, 100, id, id, "matala");
-        luoKaappi(sdX + 10, 460, 45, 20, `${id}.A011`, "A011", "sisamoduli");
-        luoKaappi(sdX + 65, 460, 45, 20, `${id}.A012`, "A012", "sisamoduli");
+// --- poistettu käytöstä              luoKaappi(sdX + 10, 460, 45, 20, `${id}.A011`, "A011", "sisamoduli");
+// --- poistettu käytöstä              luoKaappi(sdX + 65, 460, 45, 20, `${id}.A012`, "A012", "sisamoduli");
         sdX += 140;
     }
 
@@ -379,32 +379,7 @@ function generoiSDKaappiSVG(kaapinNimi) {
     // --- TULOSTUS HTML:ÄÄN ---
     svgAlue.innerHTML = html;
 }
-// YHTEINEN PIIRUSTUS A011 ja A012 SISÄKAAPEILLE
-function generoiA011_A012KaappiSVG(kaapinNimi) {
-    const svgAlue = document.getElementById("sd-kaappi-svg");
-    if (!svgAlue) return;
 
-    let html = "";
-
-    function luoOsa(x, y, w, h, numero) {
-        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
-                    onmouseover="this.querySelector('rect').setAttribute('fill', '#3498db'); this.querySelector('text').setAttribute('fill', '#ffffff');" 
-                    onmouseout="this.querySelector('rect').setAttribute('fill', '#ffffff'); this.querySelector('text').setAttribute('fill', '#2c3e50');">
-            <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff" stroke="#2c3e50" stroke-width="1.5" />
-            <text x="${x + w/2}" y="${y + h/2}" fill="#2c3e50" font-size="16px" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none">${numero}</text>
-        </g>`;
-    }
-
-    // A011/A012-kaapin omat ulkoreunat ja tausta
-    html += `<rect x="10" y="10" width="500" height="600" fill="#fcfcfc" stroke="#2c3e50" stroke-width="2" />`;
-    
-    // Tähän A011/A012 kaapin omat komponentit (voit muokata mitat oikeiksi):
-    luoOsa(50, 50, 100, 80, "1");
-    luoOsa(180, 50, 100, 80, "2");
-    luoOsa(50, 180, 230, 60, "3");
-
-    svgAlue.innerHTML = html;
-}
 function generoiSDKaappiSVG(kaapinNimi) {
     const svgAlue = document.getElementById("sd-kaappi-svg");
     if (!svgAlue) return;
@@ -540,32 +515,6 @@ function generoiSDKaappiSVG(kaapinNimi) {
     svgAlue.innerHTML = html;
 }
 
-// YHTEINEN PIIRUSTUS A011 ja A012 SISÄKAAPEILLE
-function generoiA011_A012KaappiSVG(kaapinNimi) {
-    const svgAlue = document.getElementById("sd-kaappi-svg");
-    if (!svgAlue) return;
-
-    let html = "";
-
-    function luoOsa(x, y, w, h, numero) {
-        html += `<g style="cursor: pointer; transition: 0.2s;" onclick="naytaKaapinOsanTiedot('${kaapinNimi}', '${numero}')" 
-                    onmouseover="this.querySelector('rect').setAttribute('fill', '#3498db'); this.querySelector('text').setAttribute('fill', '#ffffff');" 
-                    onmouseout="this.querySelector('rect').setAttribute('fill', '#ffffff'); this.querySelector('text').setAttribute('fill', '#2c3e50');">
-            <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff" stroke="#2c3e50" stroke-width="1.5" />
-            <text x="${x + w/2}" y="${y + h/2}" fill="#2c3e50" font-size="16px" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="central" pointer-events="none">${numero}</text>
-        </g>`;
-    }
-
-    // A011/A012-kaapin omat ulkoreunat ja tausta
-    html += `<rect x="10" y="10" width="500" height="600" fill="#fcfcfc" stroke="#2c3e50" stroke-width="2" />`;
-    
-    // Tähän A011/A012 kaapin omat komponentit (voit muokata mitat oikeiksi):
-    luoOsa(50, 50, 100, 80, "1");
-    luoOsa(180, 50, 100, 80, "2");
-    luoOsa(50, 180, 230, 60, "3");
-
-    svgAlue.innerHTML = html;
-}
 
 // ========================================== //
 // === OU01.CC001      === //
