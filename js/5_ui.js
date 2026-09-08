@@ -135,7 +135,7 @@ function generoiListanakyma() {
         const laitteetMap = new Map();
         document.querySelectorAll(".rata-osa").forEach(osa => {
             const nimi = osa.getAttribute("data-nimi");
-            if (!nimi || String(nimi).toLowerCase().includes("hukkaluisukuljetin")) return; 
+            if (!nimi) return; 
 
             const onclickAttr = osa.getAttribute("onclick"); 
             let id = "";
@@ -164,7 +164,11 @@ function generoiListanakyma() {
         const onKaarre = (l) => l.id.toLowerCase().includes("kaarre") || l.nimi.toLowerCase().includes("kaarre") || l.parentId.toLowerCase().includes("kaarre");
         const onYla = (l) => l.id.toLowerCase().includes("ylä") || l.nimi.toLowerCase().includes("ylä") || l.parentId.toLowerCase().includes("yla") || l.id.toUpperCase().includes("SO01") || l.nimi.toUpperCase().includes("SO01");
         const onKamera = (l) => l.id.toLowerCase().includes("kameratunneli") || l.nimi.toLowerCase().includes("kameratunneli") || l.parentId.toLowerCase().includes("kameratunneli");
-        // LISÄTTY: u.includes("DI01") tunnistaa OU01.DI011 ja DI012 kaapit sähkölistalle!
+        const onHukkaluisu = (l) => {
+            const u = l.id.toUpperCase();
+            const n = l.nimi.toUpperCase();
+            return u.includes("HUKKALUISUKULJETIN") || n.includes("HUKKALUISUKULJETIN") || (n >= "30101" && n <= "30105");
+        };
         const onSahkokaappi = (l) => {
             const u = l.id.toUpperCase();
             return u.includes("SD0") || u.includes("PT0") || u.includes(".CC0") || u.includes("ED0") || u.includes("AD0") || u.includes("A011") || u.includes("A012") || u.includes("DI01");
@@ -177,8 +181,6 @@ function generoiListanakyma() {
         }
 
         let html = "<h2 style='margin-top: 0; color: #2c3e50; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;'>Kaikki laitteet luettelona</h2>";
-        
-        
 
         // ========================================== //
         // 1. KL-KULJETTIMET
@@ -202,7 +204,7 @@ function generoiListanakyma() {
         }
         
         kaikkiLaitteet.forEach(laite => {
-            if (!sijoitetutAvaimet.has(laite.id) && !onVetoasema(laite) && !onKaarre(laite) && !onSahkokaappi(laite)) {
+            if (!sijoitetutAvaimet.has(laite.id) && !onVetoasema(laite) && !onKaarre(laite) && !onSahkokaappi(laite) && !onHukkaluisu(laite)) {
                 const klTunnus = haeKLRyhma(laite);
                 if (klTunnus && klRyhmat[klTunnus]) {
                     klRyhmat[klTunnus].push(laite);
@@ -238,7 +240,8 @@ function generoiListanakyma() {
             html += `</div></div>`;
         });
         html += "</div>";
-// ========================================== //
+
+        // ========================================== //
         // 2. LINJAT JA LUISUT
         // ========================================== //
         html += "<h3 style='color: #2c3e50; margin-top: 25px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>Linjat ja luisut (Kulku H ➔ A)</h3>";
@@ -265,7 +268,7 @@ function generoiListanakyma() {
                 
                 let sarjanLaitteet = kaikkiLaitteet.filter(laite => {
                     if (sijoitetutAvaimet.has(laite.id)) return false; 
-                    if (onVetoasema(laite) || onKaarre(laite) || onSahkokaappi(laite)) return false;
+                    if (onVetoasema(laite) || onKaarre(laite) || onSahkokaappi(laite) || onHukkaluisu(laite)) return false;
                     
                     const n = poimiNumero(laite.nimi);
                     const parentN = poimiNumero(laite.parentId);
@@ -293,6 +296,22 @@ function generoiListanakyma() {
             });
             html += `</div></div>`;
         });
+        // ========================================== //
+        // 5.5. HUKKALUISUKULJETIN JA SEURAAVAT (30101-30105)
+        // ========================================== //
+        let hukkaluisuLaitteet = kaikkiLaitteet.filter(l => onHukkaluisu(l) && !sijoitetutAvaimet.has(l.id));
+        hukkaluisuLaitteet.forEach(l => sijoitetutAvaimet.add(l.id));
+        hukkaluisuLaitteet.sort((a, b) => a.nimi.localeCompare(b.nimi, undefined, { numeric: true }));
+
+        if (hukkaluisuLaitteet.length > 0) {
+            html += `
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid #e67e22; padding: 15px; border-radius: 6px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="margin: 0 0 12px 0; color: #d35400; font-size: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Hukkaluisukuljetin ja seuranta (30101 - 30105)</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            `;
+            hukkaluisuLaitteet.forEach(item => html += `<button class="lista-positio-nappi" data-tiedot-id="${item.id}" onclick="${item.onclickAttr}" style="padding: 6px 12px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer;">${item.nimi}</button>`);
+            html += `</div></div>`;
+        }
         // ========================================== //
         // 3. VETOASEMAT
         // ========================================== //
@@ -380,15 +399,16 @@ function generoiListanakyma() {
         else kameraAla.forEach(item => html += `<button class='lista-positio-nappi' data-tiedot-id="${item.id}" onclick="${item.onclickAttr}">${item.nimi}</button>`);
         html += `</div></div></div>`;
 
+
+
         // ========================================== //
-        // 6. SÄHKÖKAAPIT JA KESKUKSET (UUSI JAOTTELU)
+        // 6. SÄHKÖKAAPIT JA KESKUKSET
         // ========================================== //
         html += "<h3 style='color: #d35400; margin-top: 35px; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;'>Sähkökaapit ja -keskukset ⚡</h3>";
         
         let kaapit = kaikkiLaitteet.filter(l => onSahkokaappi(l) && !sijoitetutAvaimet.has(l.id));
         kaapit.forEach(l => sijoitetutAvaimet.add(l.id));
         
-        // Määritellään uudet ryhmät
         const kaappiRyhmat = { 
             "SO01.PT001 Pääkeskus": [], 
             "SO01 Pääkeskus (CC001)": [], 
@@ -399,8 +419,6 @@ function generoiListanakyma() {
         
         kaapit.forEach(k => {
             const u = k.id.toUpperCase();
-            
-            // Järjestys on tärkeä! Ensin napataan PT001 erilleen, jottei se mene pelkkään "SO01"-ryhmään.
             if (u.includes("PT001")) {
                 kaappiRyhmat["SO01.PT001 Pääkeskus"].push(k);
             } else if (u.includes("SO01")) {
@@ -408,33 +426,26 @@ function generoiListanakyma() {
             } else if (u.includes("SO02")) {
                 kaappiRyhmat["SO02 Pääkeskus (CC001)"].push(k);
             } else if (u.includes("OU01")) {
-                kaappiRyhmat["OU01 Alakeskus (CC001)"].push(k); // OU01:n alle menee nyt myös DI011 ja DI012
+                kaappiRyhmat["OU01 Alakeskus (CC001)"].push(k);
             } else {
                 kaappiRyhmat["Muut sähkökomponentit"].push(k);
             }
         });
 
-			html += "<div style='display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px;'>";
-			Object.keys(kaappiRyhmat).forEach(ryhma => {
+        html += "<div style='display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px;'>";
+        Object.keys(kaappiRyhmat).forEach(ryhma => {
             if (kaappiRyhmat[ryhma].length === 0) return;
             
-            // JÄRJESTETÄÄN TAI NOSTETAAN PÄÄKESKUS ENSIMMÄISEKSI
             kaappiRyhmat[ryhma].sort((a, b) => {
                 const idA = a.id.toUpperCase();
                 const idB = b.id.toUpperCase();
-
-                // Määritellään mikä on kyseisen ryhmän "pääkeskus", joka halutaan kärkeen
                 let paaKeskusTunniste = "";
                 if (ryhma.includes("SO01 Pääkeskus (CC001)")) paaKeskusTunniste = "SO01.CC001";
                 else if (ryhma.includes("SO02 Pääkeskus (CC001)")) paaKeskusTunniste = "SO02.CC001";
                 else if (ryhma.includes("OU01 Alakeskus (CC001)")) paaKeskusTunniste = "OU01.CC001";
 
-                // Jos A on pääkeskus, se siirretään aina ensimmäiseksi (-1)
                 if (paaKeskusTunniste && idA.includes(paaKeskusTunniste)) return -1;
-                // Jos B on pääkeskus, A tulee sen jälkeen (1)
                 if (paaKeskusTunniste && idB.includes(paaKeskusTunniste)) return 1;
-
-                // Muut järjestetään normaalisti aakkosnumeerisesti
                 return a.nimi.localeCompare(b.nimi, undefined, { numeric: true });
             });
             

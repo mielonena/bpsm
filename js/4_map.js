@@ -122,11 +122,11 @@ function luoLuisut() {
     luoLine(410, 1060, 410, 1100, "661");
     for(let i = 0; i < 6; i++) { luoLine(600 + (i * 50), 1060, 600 + (i * 50), 1100, String(656 - i)); }
 
-    luoLine(850, 1100, 850, 1150, "30101", "Patjakuljetin 101");
-    luoPath("M 880 1180 A 30 30 0 0 1 850 1150", "30102", "Kaarrekujetin 102");
-    luoLine(880, 1180, 1150, 1180, "30103", "Patjakuljetin 103"); 
-    luoPath("M 1180 1150 A 30 30 0 0 1 1150 1180", "30104", "Kaarrekuljetin 104");
-    luoLine(1180, 1030, 1180, 1150, "30105", "Rullarata 105");
+    luoLine(850, 1100, 850, 1150, "30101");
+    luoPath("M 880 1180 A 30 30 0 0 1 850 1150", "30102");
+    luoLine(880, 1180, 1150, 1180, "30103"); 
+    luoPath("M 1180 1150 A 30 30 0 0 1 1150 1180", "30104");
+    luoLine(1180, 1030, 1180, 1150, "30105");
 }
 
 function luoRuudukonNumerot() {
