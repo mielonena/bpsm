@@ -146,6 +146,35 @@ async function vaihdaVikaTilaa() {
         paivitaVikaLista();
     }
 }
+async function paivitaAktiivisenVianPrio(uusiPrio) {
+    if (!valittuKuljetinID || !aktiivisetViat[valittuKuljetinID]) return;
+
+    try {
+        // 1. Päivitetään uusi prioriteetti Supabase-tietokantaan
+        const { error } = await supabaseclient
+            .from('aktiiviset_viat')
+            .update({ prio: uusiPrio })
+            .eq('laite_id', valittuKuljetinID);
+
+        if (error) throw error;
+
+        // 2. Päivitetään paikallinen muuttuja
+        if (typeof aktiivisetViat[valittuKuljetinID] === "object") {
+            aktiivisetViat[valittuKuljetinID].prio = uusiPrio;
+        } else {
+            aktiivisetViat[valittuKuljetinID] = { prio: uusiPrio, otsikko: "Vika" };
+        }
+
+        // 3. Päivitetään näkymät välittömästi uusiin väreihin
+        paivitaModalinVikaTila();
+        paivitaVikaKartta();
+        paivitaVikaLista();
+        
+    } catch (err) {
+        console.error("Virhe prioriteetin päivityksessä:", err);
+        alert("⚠️ Virhe päivitettäessä prioriteettia tietokantaan.");
+    }
+}
 function kuittaaAktiivinenVika() {
     if (!valittuKuljetinID || !huoltoHistoria[valittuKuljetinID]) return;
     
@@ -173,20 +202,44 @@ function paivitaModalinVikaTila() {
     const valinnat = document.getElementById("vikaValinnat");
     
     let tila = aktiivisetViat[valittuKuljetinID];
+    
     if (tila) {
         let prio = (tila === true) ? "korkea" : (typeof tila === "string" ? tila : tila.prio);
-        let otsikko = (typeof tila === "object" && tila.otsikko) ? ` - ${tila.otsikko}` : "";
-        let prioTeksti = prio === "korkea" ? "KORKEA" : (prio === "keski" ? "KESKI" : "MATALA");
+        let otsikko = (typeof tila === "object" && tila.otsikko) ? tila.otsikko : "";
         let väri = prio === "korkea" ? "#e74c3c" : (prio === "keski" ? "#e67e22" : "#f1c40f");
         let tausta = prio === "korkea" ? "#fdedec" : (prio === "keski" ? "#fdf2e9" : "#fef9e7");
 
-        teksti.innerText = `AKTIIVINEN VIKA PÄÄLLÄ (${prioTeksti})${otsikko}`; teksti.style.color = väri;
-        paneeli.style.borderLeftColor = väri; paneeli.style.backgroundColor = tausta; valinnat.style.display = "none"; 
-        btn.innerText = "✅ Kuittaa vika korjatuksi"; btn.style.backgroundColor = "#27ae60"; 
+        // Luodaan dynaaminen alasvetovalikko prioriteetin vaihtamista varten
+        let prioSelectHTML = `
+            <select onchange="paivitaAktiivisenVianPrio(this.value)" style="margin-left: 10px; font-size: 13px; padding: 3px 8px; font-weight: bold; border-radius: 4px; border: 2px solid ${väri}; color: ${väri}; background: #ffffff; cursor: pointer; outline: none;">
+                <option value="korkea" ${prio === 'korkea' ? 'selected' : ''}>🔴 KORKEA</option>
+                <option value="keski" ${prio === 'keski' ? 'selected' : ''}>🟠 KESKI</option>
+                <option value="matala" ${prio === 'matala' ? 'selected' : ''}>🟡 MATALA</option>
+            </select>
+        `;
+
+        // Laitetaan valikko otsikon perään ja vian kuvaus omalle rivilleen
+        teksti.innerHTML = `AKTIIVINEN VIKA PÄÄLLÄ ${prioSelectHTML} <br><span style="color: #2c3e50; font-size: 14px; font-weight: normal;">${otsikko.replace(' - ', '')}</span>`;
+        teksti.style.color = väri;
+        
+        paneeli.style.borderLeftColor = väri; 
+        paneeli.style.backgroundColor = tausta; 
+        valinnat.style.display = "none"; 
+        
+        btn.innerText = "✅ Kuittaa vika korjatuksi"; 
+        btn.style.backgroundColor = "#27ae60"; 
     } else {
-        teksti.innerText = "Kunnossa"; teksti.style.color = "#27ae60";
-        paneeli.style.borderLeftColor = "#bdc3c7"; paneeli.style.backgroundColor = "#f8f9f9"; valinnat.style.display = "block"; 
-        btn.innerText = "🚨 Ilmoita aktiivinen vika"; btn.style.backgroundColor = "#e74c3c"; 
+        teksti.innerText = "Kunnossa"; 
+        teksti.style.color = "#27ae60";
+        
+        paneeli.style.borderLeftColor = "#bdc3c7"; 
+        paneeli.style.backgroundColor = "#f8f9f9"; 
+        valinnat.style.display = "block"; 
+        
+        btn.innerText = "🚨 Ilmoita aktiivinen vika"; 
+        btn.style.backgroundColor = "#e74c3c"; 
+        
+        // Tyhjennetään uuden vian lomake
         if(document.getElementById("vikaOtsikko")) document.getElementById("vikaOtsikko").value = "";
         if(document.getElementById("vikaSijainti")) document.getElementById("vikaSijainti").value = "Määrittelemätön";
         if(document.getElementById("vikaKommentti")) document.getElementById("vikaKommentti").value = "";

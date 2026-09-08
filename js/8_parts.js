@@ -312,7 +312,7 @@ function muokkaaMasterVaraosa(oikeaNumero, turvallinenId) {
     const kaytto = tdElementit[5].innerText;
 
     tr.innerHTML = `
-        <td style="font-weight: bold;">${oikeaNumero}</td>
+        <td><input type="text" id="master-numero-${turvallinenId}" value="${oikeaNumero}" style="width: 100%; padding: 4px; box-sizing: border-box; font-weight: bold; border: 2px solid #e74c3c; color: #c0392b;"></td>
         <td><input type="text" id="master-nimi-${turvallinenId}" value="${nykyinenNimi}" style="width: 100%; padding: 4px; box-sizing: border-box;"></td>
         <td><input type="text" id="master-hylly-${turvallinenId}" value="${nykyinenHylly}" style="width: 100%; padding: 4px; box-sizing: border-box; border: 2px solid #3498db;"></td>
         <td><input type="text" id="master-toim-${turvallinenId}" value="${nykyinenToim}" style="width: 100%; padding: 4px; box-sizing: border-box;"></td>
@@ -325,29 +325,63 @@ function muokkaaMasterVaraosa(oikeaNumero, turvallinenId) {
     `;
 }
 
-async function tallennaMasterVaraosa(oikeaNumero, turvallinenId) {
+async function tallennaMasterVaraosa(alkuperainenNumero, turvallinenId) {
     if(!onkoAdmin) return;
+    
+    // Noudetaan kaikkien kenttien uudet arvot
+    const uusiNumero = document.getElementById(`master-numero-${turvallinenId}`).value.trim() || "-";
     const uusiNimi = document.getElementById(`master-nimi-${turvallinenId}`).value.trim() || "-";
     const uusiHylly = document.getElementById(`master-hylly-${turvallinenId}`).value.trim() || "-";
     const uusiToim = document.getElementById(`master-toim-${turvallinenId}`).value.trim() || "-";
 
-    const updateObj = { nimi: uusiNimi, hylly: uusiHylly, toimittaja: uusiToim };
+    // Varmistetaan, ettei käyttäjä tyhjentänyt koko numeroa vahingossa
+    if (uusiNumero === "-" || uusiNumero === "") {
+        alert("Varaosanumero ei voi olla tyhjä!");
+        return;
+    }
+
+    const updateObj = { 
+        numero: uusiNumero, 
+        nimi: uusiNimi, 
+        hylly: uusiHylly, 
+        toimittaja: uusiToim 
+    };
 
     try {
-        const { error } = await supabaseclient.from('varaosat').update(updateObj).eq('numero', oikeaNumero);
+        // Päivitetään Supabasen tauluun. Etsitään kaikki rivit alkuperäisellä numerolla ja päivitetään uudet tiedot!
+        const { error } = await supabaseclient.from('varaosat').update(updateObj).eq('numero', alkuperainenNumero);
         if (error) throw error;
         
+        // Päivitetään ohjelman paikallinen muisti (niin laiteluettelotkin päivittyvät lennosta)
+        let muutettuja = 0;
         for (let laiteId in varaosatData) {
             varaosatData[laiteId].forEach(osa => {
-                if (osa.numero === oikeaNumero) {
-                    osa.nimi = uusiNimi; osa.hylly = uusiHylly; osa.toimittaja = uusiToim;
+                if (osa.numero === alkuperainenNumero) {
+                    osa.numero = uusiNumero; // <-- TÄRKEIN UUSI RIVI
+                    osa.nimi = uusiNimi; 
+                    osa.hylly = uusiHylly; 
+                    osa.toimittaja = uusiToim;
+                    muutettuja++;
                 }
             });
         }
+        
+        // Luodaan keskitetty näkymä uudelleen päivitetyllä datalla
         generoiKaikkiVaraosatNakyma();
-        alert(`✅ Tallennettu ja synkronoitu pilvitietokantaan osanumero: ${oikeaNumero}`);
-    } catch(err) { alert("Virhe tallennuksessa: " + err.message); }
-}// 2. Apufunktio lomakkeen avaamiseen
+        
+        // Ilmoitetaan onnistumisesta!
+        if (alkuperainenNumero !== uusiNumero) {
+            alert(`✅ Numero muutettu onnistuneesti: ${alkuperainenNumero} ➔ ${uusiNumero} \nMuutos vaikutti ${muutettuja} laitteeseen.`);
+        } else {
+            alert(`✅ Tiedot tallennettu ja synkronoitu pilveen (${muutettuja} laitetta).`);
+        }
+
+    } catch(err) { 
+        alert("Virhe tallennuksessa: " + err.message); 
+    }
+}
+
+// 2. Apufunktio lomakkeen avaamiseen
 function avaaKaappiHuoltoLomake() {
     document.getElementById("kaappi-huolto-lomake").style.display = "block";
     document.getElementById("kh-pvm").valueAsDate = new Date();
