@@ -2,7 +2,8 @@
 // === 1. GLOBAALIT MUUTTUJAT JA TILA ======= //
 // ========================================== //
 
-let onkoAdmin = false; // Tieto siitä, onko kirjautuneella käyttäjällä admin-oikeudet
+let kayttajaRooli = 'katsoja'; // UUSI: 'admin', 'asentaja' tai 'katsoja' (Oletuksena turvallisin)
+let onkoAdmin = false; // Säilytetään yhteensopivuuden vuoksi (vastaa tilaa kayttajaRooli === 'admin')
 let kirjautunutKayttaja = ""; // Tallentaa sähköpostin alkuosan
 
 const kuljetinData = {};
@@ -10,6 +11,7 @@ let valittuKuljetinID = "";
 let muokattavaIndeksi = -1; 
 let laatikotPiirretty = false;
 let peruskunnostusNakymaPaalla = false;
+let vikaTyyppiFiltteri = "Kaikki"; // UUSI: Vika/PK -suodatus
 let vikaSorttaus = "kl_asc";
 let vikaFiltteri = "Kaikki";
 let vikaHakuTeksti = ""; 

@@ -88,6 +88,12 @@ async function tuoCSVHistoria(event) {
 }
 
 function lataaAktiivisetViatExcel() {
+    // ESTO: Katsojat eivät saa viedä dataa ohjelmasta ulos
+    if (kayttajaRooli === 'katsoja') {
+        alert("Sinulla ei ole oikeuksia viedä tiedostoja ulos järjestelmästä.");
+        return;
+    }
+
     let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
     csvContent += "Laite / Tunnus;Ryhmä;Prioriteetti;Työnumero;Tyyppi;Vian kuvaus;Sijainti laitteessa;Lisätiedot\n";
 
@@ -127,6 +133,12 @@ function lataaAktiivisetViatExcel() {
 }
 
 function lataaExcel(lataaKaikki) {
+    // ESTO: Katsojat eivät saa viedä dataa ohjelmasta ulos
+    if (kayttajaRooli === 'katsoja') {
+        alert("Sinulla ei ole oikeuksia viedä tiedostoja ulos järjestelmästä.");
+        return;
+    }
+
     let data = [["Status", "Tyyppi", "Päivämäärä", "Laite / Tunnus", "Työnumero", "Otsikko / Vika", "Vaihdetut osat / Kuvaus", "Sijainti"]];
     let historiakohteet = lataaKaikki ? Object.entries(huoltoHistoria) : [[valittuKuljetinID, huoltoHistoria[valittuKuljetinID]]];
 

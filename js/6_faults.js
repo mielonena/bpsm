@@ -44,29 +44,41 @@ function paivitaPeruskunnostetutKartalle() {
 async function synkronoiLaitteenVikatila(id) {
     if (!huoltoHistoria[id]) {
         try {
-            await supabaseclient.from('aktiiviset_viat').delete().eq('laite_id', id);
-        } catch(e){}
+            const { error } = await supabaseclient.from('aktiiviset_viat').delete().eq('laite_id', id);
+            if (error) console.error("Virhe poistettaessa vikatilaa (tyhjä historia):", error);
+        } catch(e) {}
+        
         delete aktiivisetViat[id];
         return;
     }
+
     const ekaUusi = huoltoHistoria[id].find(t => t.status && t.status.toLowerCase() === "new");
+    
     if (ekaUusi) {
         const vikaObj = {
             laite_id: id, prio: "keski", otsikko: ekaUusi.otsikko || "Määrittelemätön vika",
             sijainti: ekaUusi.sijainti || "-", kommentti: ekaUusi.osat || "-",
             tyo_numero: ekaUusi.tyoNumero || "-", tyo_tyyppi: ekaUusi.tyoTyyppi || "Vika"
         };
-        await supabaseclient.from('aktiiviset_viat').upsert(vikaObj);
+        const { error } = await supabaseclient.from('aktiiviset_viat').upsert(vikaObj);
+        if (error) console.error("Virhe päivitettäessä aktiivista vikaa:", error);
+
         aktiivisetViat[id] = {
             prio: vikaObj.prio, otsikko: vikaObj.otsikko, sijainti: vikaObj.sijainti,
             kommentti: vikaObj.kommentti, tyoNumero: vikaObj.tyo_numero, tyoTyyppi: vikaObj.tyo_tyyppi
         };
     } else {
-        await supabaseclient.from('aktiiviset_viat').delete().eq('laite_id', id);
-        delete aktiivisetViat[id];
+        // Jos uusia vikoja ei enää ole, poistetaan laite aktiiviset_viat -taulusta
+        const { error } = await supabaseclient.from('aktiiviset_viat').delete().eq('laite_id', id);
+        
+        if (error) {
+            console.error("Tietokanta esti vikatilan poistamisen (Tarkista RLS säännöt!):", error);
+        } else {
+            // Poistetaan paikallisesta muistista vain, jos tietokantapoisto onnistui
+            delete aktiivisetViat[id];
+        }
     }
 }
-
 function paivitaVikaKartta() {
     document.querySelectorAll(".vika-pallo").forEach(pallo => pallo.remove());
     document.querySelectorAll(".lista-positio-nappi").forEach(btn => {
@@ -110,6 +122,12 @@ function paivitaVikaKartta() {
 }
 
 async function vaihdaVikaTilaa() {
+    // ESTO: Katsojat eivät saa ilmoittaa vikoja
+    if (kayttajaRooli === 'katsoja') {
+        alert("Vain luku -oikeus. Et voi tehdä muutoksia.");
+        return;
+    }
+
     if (aktiivisetViat[valittuKuljetinID]) {
         // --- VIAN KUITTAUS (Muokkaustila) ---
         const vanhaTila = aktiivisetViat[valittuKuljetinID];
@@ -117,19 +135,15 @@ async function vaihdaVikaTilaa() {
         let sijainti = typeof vanhaTila === "object" ? (vanhaTila.sijainti || "Määrittelemätön") : "Määrittelemätön";
         let kommentti = typeof vanhaTila === "object" ? (vanhaTila.kommentti || "") : "";
 
-        // 1. EI POISTETA VIELÄ TIETOKANNASTA, avataan vain lomake
         naytaLisaysLomake();
         
-        // 2. Täytetään lomake tiedoilla (olettaen että sinulla on muuttuja, joka tietää mikä rivi on auki)
         document.getElementById("uusiOtsikko").value = otsikko.replace(/\s*\([^)]*\)\s*$/, ''); 
         document.getElementById("uusiSijainti").value = sijainti; 
         if(document.getElementById("uusiOsat")) document.getElementById("uusiOsat").value = kommentti.replace(/\s*\(Työ:\s*[^)]*\)\s*$/, '');
         if(document.getElementById("uusiStatus")) document.getElementById("uusiStatus").value = "Completed";
         
-        // 3. TÄRKEÄÄ: Asetetaan jokin lippu, että tiedämme tämän olevan kuittaus
-        // esim. muokattavaIndeksi = etsiOikeaRivi(valittuKuljetinID);
     } else {
-        // --- UUDEN VIAN ILMOITTAMINEN (tämä puoli on OK) ---
+        // --- UUDEN VIAN ILMOITTAMINEN ---
         const uusiVika = {
             laite_id: valittuKuljetinID, 
             prio: document.getElementById("vikaPrioriteetti").value,
@@ -146,11 +160,18 @@ async function vaihdaVikaTilaa() {
         paivitaVikaLista();
     }
 }
+
 async function paivitaAktiivisenVianPrio(uusiPrio) {
+    // ESTO: Katsojat eivät saa muuttaa prioriteettia
+    if (kayttajaRooli === 'katsoja') {
+        alert("Vain luku -oikeus. Et voi tehdä muutoksia.");
+        paivitaModalinVikaTila(); // Palauttaa valikon visuaalisesti takaisin alkuperäiseen arvoon
+        return;
+    }
+
     if (!valittuKuljetinID || !aktiivisetViat[valittuKuljetinID]) return;
 
     try {
-        // 1. Päivitetään uusi prioriteetti Supabase-tietokantaan
         const { error } = await supabaseclient
             .from('aktiiviset_viat')
             .update({ prio: uusiPrio })
@@ -158,14 +179,12 @@ async function paivitaAktiivisenVianPrio(uusiPrio) {
 
         if (error) throw error;
 
-        // 2. Päivitetään paikallinen muuttuja
         if (typeof aktiivisetViat[valittuKuljetinID] === "object") {
             aktiivisetViat[valittuKuljetinID].prio = uusiPrio;
         } else {
             aktiivisetViat[valittuKuljetinID] = { prio: uusiPrio, otsikko: "Vika" };
         }
 
-        // 3. Päivitetään näkymät välittömästi uusiin väreihin
         paivitaModalinVikaTila();
         paivitaVikaKartta();
         paivitaVikaLista();
@@ -175,26 +194,30 @@ async function paivitaAktiivisenVianPrio(uusiPrio) {
         alert("⚠️ Virhe päivitettäessä prioriteettia tietokantaan.");
     }
 }
+
 function kuittaaAktiivinenVika() {
+    // ESTO: Katsojat eivät saa avata kuittauslomaketta täältäkään
+    if (kayttajaRooli === 'katsoja') {
+        alert("Vain luku -oikeus. Et voi tehdä muutoksia.");
+        return;
+    }
+
     if (!valittuKuljetinID || !huoltoHistoria[valittuKuljetinID]) return;
     
-    // Etsitään kyseisen laitteen historia ja sieltä vika, jonka status on "New"
     const vikaIndeksi = huoltoHistoria[valittuKuljetinID].findIndex(t => t.status && t.status.toLowerCase() === "new");
     
     if (vikaIndeksi !== -1) {
-        // Avataan vanha CSV-työ MUOKKAUSTILASSA (tämä estää kloonautumisen!)
         muokkaaMerkintaa(vikaIndeksi);
         
-        // Vaihdetaan status lomakkeessa heti valmiiksi, jotta käyttäjän ei tarvitse
         const statusElem = document.getElementById("uusiStatus");
         if (statusElem) statusElem.value = "Completed";
         
-        // Rullataan ruutu nätisti lomakkeen kohdalle
         document.getElementById("lisaysLomake").scrollIntoView({ behavior: 'smooth' });
     } else {
         alert("Ei aktiivista vikaa kuitattavaksi.");
     }
 }
+
 function paivitaModalinVikaTila() {
     const btn = document.getElementById("btnVikaToggle");
     const teksti = document.getElementById("vikaTilaTeksti");
@@ -209,7 +232,6 @@ function paivitaModalinVikaTila() {
         let väri = prio === "korkea" ? "#e74c3c" : (prio === "keski" ? "#e67e22" : "#f1c40f");
         let tausta = prio === "korkea" ? "#fdedec" : (prio === "keski" ? "#fdf2e9" : "#fef9e7");
 
-        // Luodaan dynaaminen alasvetovalikko prioriteetin vaihtamista varten
         let prioSelectHTML = `
             <select onchange="paivitaAktiivisenVianPrio(this.value)" style="margin-left: 10px; font-size: 13px; padding: 3px 8px; font-weight: bold; border-radius: 4px; border: 2px solid ${väri}; color: ${väri}; background: #ffffff; cursor: pointer; outline: none;">
                 <option value="korkea" ${prio === 'korkea' ? 'selected' : ''}>🔴 KORKEA</option>
@@ -218,7 +240,6 @@ function paivitaModalinVikaTila() {
             </select>
         `;
 
-        // Laitetaan valikko otsikon perään ja vian kuvaus omalle rivilleen
         teksti.innerHTML = `AKTIIVINEN VIKA PÄÄLLÄ ${prioSelectHTML} <br><span style="color: #2c3e50; font-size: 14px; font-weight: normal;">${otsikko.replace(' - ', '')}</span>`;
         teksti.style.color = väri;
         
@@ -239,7 +260,6 @@ function paivitaModalinVikaTila() {
         btn.innerText = "🚨 Ilmoita aktiivinen vika"; 
         btn.style.backgroundColor = "#e74c3c"; 
         
-        // Tyhjennetään uuden vian lomake
         if(document.getElementById("vikaOtsikko")) document.getElementById("vikaOtsikko").value = "";
         if(document.getElementById("vikaSijainti")) document.getElementById("vikaSijainti").value = "Määrittelemätön";
         if(document.getElementById("vikaKommentti")) document.getElementById("vikaKommentti").value = "";
@@ -384,7 +404,6 @@ function paivitaVikaLista() {
                     <tbody>`;
         
         ryhmaAvaimet.forEach(ryhma => {
-            // Lisätään ryhmälle selkeä väliotsikkorivi, joka yhdistää kaikki 8 saraketta (colspan="8")
             html += `<tr>
                         <td colspan="8" style="background-color: #ecf0f1; color: #2c3e50; padding: 12px 15px; border-bottom: 2px solid #bdc3c7;">
                             <h3 style="margin: 0; font-size: 16px;">📍 Linja / Ryhmä: ${ryhma}</h3>

@@ -6,22 +6,44 @@ async function tarkistaKirjautuminen() {
     const { data: { session } } = await supabaseclient.auth.getSession();
     
     if (session) {
-	if (session.user.email) {
+        if (session.user.email) {
             kirjautunutKayttaja = session.user.email.split('@')[0];
         }
 
-	console.log("Käyttäjän metadata:", session.user.app_metadata);
-        // Luetaan käyttäjän rooli metatiedoista
-        if (session.user.app_metadata && session.user.app_metadata.role === 'admin') {
+        // Haetaan käyttäjän rooli turvallisesti Supabasen kayttajaroolit-taulusta
+        try {
+            const { data: rooliData, error: rooliVirhe } = await supabaseclient
+                .from('kayttajaroolit')
+                .select('rooli')
+                .eq('id', session.user.id)
+                .single();
+
+            if (rooliData && rooliData.rooli) {
+                kayttajaRooli = rooliData.rooli; // Asettaa 'admin', 'asentaja' tai 'katsoja'
+            } else {
+                kayttajaRooli = 'katsoja'; // Oletus, jos käyttäjää ei löydy roolitaulusta
+            }
+        } catch (e) {
+            console.error("Virhe roolin haussa:", e);
+            kayttajaRooli = 'katsoja'; // Turvallinen fallback virhetilanteessa
+        }
+
+        console.log(`Kirjautunut käyttäjä: ${kirjautunutKayttaja} | Rooli: ${kayttajaRooli}`);
+
+        // Säilytetään yhteensopivuus vanhojen onkoAdmin-tarkistusten kanssa
+        if (kayttajaRooli === 'admin') {
             onkoAdmin = true;
-	document.querySelectorAll('.admin-vain').forEach(el => el.classList.remove('admin-vain'));
+            // Paljastetaan admineille tarkoitetut piilotetut napit (jos html:ssä on luokka admin-vain)
+            document.querySelectorAll('.admin-vain').forEach(el => el.classList.remove('admin-vain'));
         } else {
             onkoAdmin = false;
         }
         
+        // Vaihdetaan näkymä kirjautumisruudusta varsinaiseen sovellukseen
         document.getElementById('login-container').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
         
+        // Ladataan ohjelman data ja käyttöliittymä
         await lataaKaikkiDataTietokannasta();
         generoiListanakyma();
         paivitaVikaKartta();
