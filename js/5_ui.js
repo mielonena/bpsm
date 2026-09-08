@@ -176,7 +176,7 @@ function generoiListanakyma() {
             return matches ? parseInt(matches[matches.length - 1], 10) : null;
         }
 
-        let html = "<h2 style='margin-top: 0; color: #2c3e50; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;'>Kaikki laitteet ja linjastot luettelona 📋</h2>";
+        let html = "<h2 style='margin-top: 0; color: #2c3e50; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;'>Kaikki laitteet luettelona</h2>";
         
         
 

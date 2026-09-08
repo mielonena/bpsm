@@ -2,9 +2,17 @@
 // === 8. HUOLTOHISTORIAN HALLINTA ========== //
 // ========================================== //
 
+let historiaTyyppiFiltteri = "Kaikki"; // Uusi muuttuja tyypin suodatukselle
+
 function muutaHistoriaHakua() {
     const valinta = document.getElementById("historiaHakuAsetus");
     if(valinta) historiaHakuTeksti = valinta.value.toLowerCase();
+    paivitaKokoHistoriaNakyma();
+}
+
+function muutaHistoriaTyyppiFiltteria() {
+    const valinta = document.getElementById("historiaTyyppiAsetus");
+    if(valinta) historiaTyyppiFiltteri = valinta.value;
     paivitaKokoHistoriaNakyma();
 }
 
@@ -17,10 +25,18 @@ function paivitaKokoHistoriaNakyma() {
 
     if (!historiaControls) {
         historiaAlue.innerHTML = `
-            <h2 style='color: #3498db; margin-top: 0;'>Koko laitteiston huolto- ja vikahistoria 📖 <span id="historia-lkm" style="font-size: 18px; color: #7f8c8d; font-weight: normal;"></span></h2>
+            <h2 style='color: #3498db; margin-top: 0;'>Koko laitteiston huolto- ja vikahistoria <span id="historia-lkm" style="font-size: 18px; color: #7f8c8d; font-weight: normal;"></span></h2>
             <div id="historia-controls" style="background: #f8f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #bdc3c7; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
                 <strong style="color: #2c3e50;">Etsi historiasta:</strong>
                 <input type="text" id="historiaHakuAsetus" placeholder="🔍 Hae laitetta, vikaa, työnumeroa tai tekijää..." oninput="muutaHistoriaHakua()" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; outline: none; flex: 1; min-width: 250px;">
+                
+                <select id="historiaTyyppiAsetus" onchange="muutaHistoriaTyyppiFiltteria()" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; outline: none; min-width: 150px;">
+                    <option value="Kaikki">Kaikki tyypit</option>
+                    <option value="Vika">Vika</option>
+                    <option value="Peruskunnostus">Peruskunnostus</option>
+                    <option value="Kuntokartoituksen perusteella">Kuntokartoituksen perusteella</option>
+                </select>
+
                 <button onclick="lataaExcel(true)" style="margin-left: auto; padding: 8px 16px; background-color: #27ae60; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;">
                     📥 Lataa Exceliin
                 </button>
@@ -31,6 +47,7 @@ function paivitaKokoHistoriaNakyma() {
         historiaTauluAlue = document.getElementById("historia-taulu-alue");
     }
     if(document.getElementById("historiaHakuAsetus")) document.getElementById("historiaHakuAsetus").value = historiaHakuTeksti;
+    if(document.getElementById("historiaTyyppiAsetus")) document.getElementById("historiaTyyppiAsetus").value = historiaTyyppiFiltteri;
     
     let kaikkiTapahtumat = [];
     for (const [laiteId, tapahtumat] of Object.entries(huoltoHistoria)) {
@@ -39,6 +56,15 @@ function paivitaKokoHistoriaNakyma() {
         });
     }
 
+    // Suodatus TYYPIN mukaan
+    if (historiaTyyppiFiltteri !== "Kaikki") {
+        kaikkiTapahtumat = kaikkiTapahtumat.filter(item => {
+            const tyyppi = item.tyoTyyppi || "-";
+            return tyyppi === historiaTyyppiFiltteri;
+        });
+    }
+
+    // Suodatus HAKUTESTIN mukaan
     if (historiaHakuTeksti) {
         const haku = historiaHakuTeksti;
         kaikkiTapahtumat = kaikkiTapahtumat.filter(item => {
@@ -64,7 +90,7 @@ function paivitaKokoHistoriaNakyma() {
     let html = "";
     if (kaikkiTapahtumat.length === 0) {
         html += `<div style="background-color: #fdfefe; border-left: 6px solid #bdc3c7; padding: 20px; border-radius: 4px; margin-top: 20px;">
-                    <p style="color: #7f8c8d; margin: 0; font-weight: bold;">Ei hakutuloksia tai järjestelmässä ei ole vielä kirjattua huoltohistoriaa.</p>
+                    <p style="color: #7f8c8d; margin: 0; font-weight: bold;">Ei hakutuloksia tai järjestelmässä ei ole vielä kirjattua huoltohistoriaa tälle valinnalle.</p>
                  </div>`;
     } else {
         html += `<table class="vikatilasto-taulu"><thead><tr><th>Status</th><th>Päivämäärä</th><th>Laite / Tunnus</th><th>Työnumero</th><th>Tyyppi</th><th>Otsikko / Vika</th><th>Vaihdetut osat / Kuvaus</th><th>Tekijä</th><th>Toiminnot</th></tr></thead><tbody>`;
@@ -137,22 +163,21 @@ function avaaTiedot(id) {
                 console.log("-> Piirretään ED (OU01.ED)");
                 generoiOU01EDKaappiSVG(id);
             }
-	      else if (id.includes("OU01.AD")){
+            else if (id.includes("OU01.AD")){
                 console.log("-> Piirretään AD (OU01.AD)");
                 generoiOU01ADKaappiSVG(id);
             }
-	      else if (id.includes("SO01.AD")){
+            else if (id.includes("SO01.AD")){
                 console.log("-> Piirretään AD (SO01.AD)");
                 generoiSO0102ADKaappiSVG(id);
             }
-	      else if (id.includes("SO02.AD")){
+            else if (id.includes("SO02.AD")){
                 console.log("-> Piirretään AD (SO02.AD)");
                 generoiSO0102ADKaappiSVG(id);
-            }	     
-	      else if (id.includes("A011") || id.includes("A012")) {
+            }       
+            else if (id.includes("A011") || id.includes("A012")) {
                 console.log("-> Piirretään A011/A012");                
                 generoiA011_A012KaappiSVG(id);
-
             }
 
             
@@ -178,7 +203,7 @@ function avaaTiedot(id) {
             visuaalinenKaappi.style.display = "none";
             if (normaaliNakyma) normaaliNakyma.style.display = "block";
         }
-    }    
+    }   
 
     const varaosaLisaaBtn = document.querySelector(".nappi-lisaa[onclick='lisaaUusiVaraosa()']");
     if(varaosaLisaaBtn) {
@@ -194,7 +219,7 @@ function avaaTiedot(id) {
             let statusTeksti = tapahtuma.status === "New" ? "⏳ Odottaa" : (tapahtuma.status === "Completed" ? "✅ Valmis" : (tapahtuma.status || "-"));
             let statusTyyli = tapahtuma.status === "New" ? "color: #e67e22; font-weight: bold;" : "color: #27ae60;";
             
-            let toiminnot = onkoAdmin ? 
+            let toiminnot = (kayttajaRooli === 'admin' || kayttajaRooli === 'asentaja') ? 
                 `<button onclick="muokkaaMerkintaa(${index})" style="padding: 4px 8px; cursor: pointer; background: #f39c12; color: white; border: none; border-radius: 3px; font-weight: bold; font-size: 12px;">✏️ Muokkaa</button>` : 
                 `<span style="color: #bdc3c7; font-size: 12px;">Vain luku</span>`;
 
@@ -218,6 +243,11 @@ function avaaTiedot(id) {
 function suljeTiedot() { document.getElementById("tiedotIkkuna").style.display = "none"; }
 
 function naytaLisaysLomake() {
+    if (kayttajaRooli === 'katsoja') {
+        alert("Vain luku -oikeus. Et voi lisätä töitä.");
+        return;
+    }
+    
     document.getElementById("lisaysLomake").style.display = "block";
     document.getElementById("btnNaytaLisays").style.display = "none";
     const laiteKentta = document.getElementById("uusiLaiteID"); if (laiteKentta) laiteKentta.value = valittuKuljetinID;
@@ -245,13 +275,14 @@ function piilotaLisaysLomake() {
     const poistaBtn = document.getElementById("btnPoistaTyö"); 
     if (poistaBtn) poistaBtn.style.display = "none";
 
-    // KORJAUS 1: Palautetaan vika-banneri näkyviin, jos peruutit kuitauksen
     if (typeof valittuKuljetinID !== "undefined" && valittuKuljetinID) {
         paivitaModalinVikaTila();
     }
 }
 
 function muokkaaMerkintaa(indeksi) {
+    if (kayttajaRooli === 'katsoja') { return; }
+    
     muokattavaIndeksi = indeksi; 
     const merkinta = huoltoHistoria[valittuKuljetinID][indeksi];
     let isoDate = "";
@@ -274,6 +305,7 @@ function muokkaaMerkintaa(indeksi) {
 
 async function tallennaUusiMerkinta(event) {
     if (event) event.preventDefault(); 
+    if (kayttajaRooli === 'katsoja') { alert("Vain luku -oikeus."); return; }
     
     const laiteKentta = document.getElementById("uusiLaiteID");
     const kohdeLaiteID = laiteKentta ? laiteKentta.value.trim() : valittuKuljetinID;
@@ -304,12 +336,15 @@ async function tallennaUusiMerkinta(event) {
     const siirretaanToiselle = (muokattavaIndeksi !== -1 && kohdeLaiteID !== valittuKuljetinID);
 
     try {
-        // 1. TALLENNUS TIETOKANTAAN
         if (muokattavaIndeksi !== -1) {
-            if(!onkoAdmin) { alert("Ei oikeuksia muokata vanhaa työtä!"); return; } 
-
+            // Huom: Varmistetaan että asentajakin saa muokata vanhaa merkintäänsä tai kuitata vian, 
+            // joten tässä if(!onkoAdmin) poistettu, RLS hoitaa suojauksen.
             const vanhaMerkinta = huoltoHistoria[valittuKuljetinID][muokattavaIndeksi];
             if (siirretaanToiselle) {
+                // Tässä on pieni haaste: Asentaja ei saa RLS:n takia poistaa (DELETE) vanhaa siirrettäessä.
+                // Sallitaan siirto vain adminille:
+                if (!onkoAdmin) { alert("Vain admin voi siirtää vanhan työn toiselle laitteelle!"); return; }
+                
                 await supabaseclient.from('huoltohistoria').delete().eq('id', vanhaMerkinta.id);
                 huoltoHistoria[valittuKuljetinID].splice(muokattavaIndeksi, 1);
                 const { data } = await supabaseclient.from('huoltohistoria').insert(dbObj).select();
@@ -323,13 +358,11 @@ async function tallennaUusiMerkinta(event) {
             if(data && data[0]) dbObj.id = data[0].id;
         }
 
-        // 2. KÄYTTÖLIITTYMÄOBJEKTIN LUONTI
         const uiObj = {
             id: dbObj.id, pvm: dbObj.pvm, tyoNumero: dbObj.tyo_numero, tyoTyyppi: dbObj.tyo_tyyppi,
             sijainti: dbObj.sijainti, otsikko: dbObj.otsikko, osat: dbObj.osat, tekija: dbObj.tekija, status: dbObj.status
         };
 
-        // 3. PAIKALLISEN MUISTIN PÄIVITYS
         if (siirretaanToiselle) {
             if (huoltoHistoria[valittuKuljetinID].length === 0) delete huoltoHistoria[valittuKuljetinID];
             await synkronoiLaitteenVikatila(valittuKuljetinID);
@@ -344,13 +377,11 @@ async function tallennaUusiMerkinta(event) {
             }
         }
 
-        // 4. KUITTAUSLOGIIKKA (Siivoaa aktiivisen vian pois, jos työ kuitataan valmiiksi)
         if (dbObj.status === "Completed" && aktiivisetViat[kohdeLaiteID]) {
             await supabaseclient.from('aktiiviset_viat').delete().eq('laite_id', kohdeLaiteID);
             delete aktiivisetViat[kohdeLaiteID];
         }
 
-        // 5. NÄKYMIEN PÄIVITYS
         await synkronoiLaitteenVikatila(kohdeLaiteID);
         piilotaLisaysLomake(); 
         avaaTiedot(valittuKuljetinID); 
@@ -393,6 +424,7 @@ async function poistaValittuTyo() {
 }
 
 function kirjaaKaapinOsaan(osaNimi) {
+    if (kayttajaRooli === 'katsoja') { alert("Vain luku -oikeus."); return; }
     naytaLisaysLomake();
     const sijaintiKentta = document.getElementById("uusiSijainti");
     if (sijaintiKentta) {
