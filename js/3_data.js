@@ -15,7 +15,7 @@ async function lataaKaikkiDataTietokannasta() {
             viat.forEach(v => {
                 aktiivisetViat[v.laite_id] = {
                     prio: v.prio, otsikko: v.otsikko, sijainti: v.sijainti,
-                    kommentti: v.kommentti, tyoNumero: v.tyo_numero, tyoTyyppi: v.tyo_tyyppi
+                    kommentti: v.kommentti, tyoNumero: v.tyo_numero, tyoTyyppi: v.tyo_tyyppi, suunniteltu_pvm: v.suunniteltu_pvm
                 };
             });
         }

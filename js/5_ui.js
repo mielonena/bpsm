@@ -25,6 +25,7 @@ function vaihdaTaso(taso) {
     const historiaAlue = document.getElementById("historia-alue");
     const varaosatAlue = document.getElementById("varaosat-alue");
     const kaapitAlue = document.getElementById("kaapit-alue");
+    const suunnitteluAlue = document.getElementById("suunnittelu-alue");
 
     if(karttaAlue) karttaAlue.style.display = "none"; 
     if(listaAlue) listaAlue.style.display = "none";
@@ -32,6 +33,7 @@ function vaihdaTaso(taso) {
     if (historiaAlue) historiaAlue.style.display = "none";
     if (varaosatAlue) varaosatAlue.style.display = "none";
     if(kaapitAlue) kaapitAlue.style.display = "none";
+    if(suunnitteluAlue) suunnitteluAlue.style.display = "none";
 
     if (taso === 'lista') {
         document.getElementById("btnLista").classList.add("aktiivinen");
@@ -50,10 +52,15 @@ function vaihdaTaso(taso) {
         if (btnVar) btnVar.classList.add("aktiivinen");
         if (varaosatAlue) varaosatAlue.style.display = "block";
         generoiKaikkiVaraosatNakyma(); 
-   } else if (taso === 'kaapit') {
+    } else if (taso === 'kaapit') {
         const btnKaapit = document.getElementById("btnKaapit");
         if (btnKaapit) btnKaapit.classList.add("aktiivinen");
         if (kaapitAlue) kaapitAlue.style.display = "block";
+    } else if (taso === 'suunnittelu') {
+        const btnSuunnittelu = document.getElementById("btnSuunnittelu");
+        if (btnSuunnittelu) btnSuunnittelu.classList.add("aktiivinen");
+        if (suunnitteluAlue) suunnitteluAlue.style.display = "block";
+        generoiSuunnitteluNakyma();
     } else {
         if(karttaAlue) karttaAlue.style.display = "block";
         if (taso === 'yla') {
@@ -485,4 +492,466 @@ function generoiListanakyma() {
             <p style="font-family: monospace; font-size: 12px;">Virheviesti: ${error.message}</p>
         </div>`;
     }
+}
+// ========================================== //
+// === 13. SUUNNITTELU JA AIKAJANA ========== //
+// ========================================== //
+
+let suunnitteluNykyinenPvm = new Date(); 
+let suunnitteluNakymaTyyppi = 'kalenteri'; // 'kalenteri' tai 'vuosi'
+
+function vaihdaSuunnitteluKuukausi(suunta) {
+    suunnitteluNykyinenPvm.setMonth(suunnitteluNykyinenPvm.getMonth() + suunta);
+    generoiSuunnitteluNakyma();
+}
+
+function vaihdaSuunnitteluVuosi(suunta) {
+    suunnitteluNykyinenPvm.setFullYear(suunnitteluNykyinenPvm.getFullYear() + suunta);
+    generoiSuunnitteluNakyma();
+}
+
+function vaihdaSuunnitteluNakymaa(tyyppi) {
+    suunnitteluNakymaTyyppi = tyyppi;
+    generoiSuunnitteluNakyma();
+}
+
+// Apufunktio viikkonumeron laskemiseen (ISO 8601)
+function haeViikkonumero(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+// Apufunktio päivämäärän muotoiluun YYYY-MM-DD
+function muotoileTietokantaPvm(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Apufunktio työn keston muuttamiseen tunneiksi laskentaa varten (Ymmärtää: "2h", "1,5", "30min" jne.)
+function laskeKestoTunteina(arvioStr) {
+    if (!arvioStr) return 0;
+    const str = String(arvioStr).toLowerCase().replace(',', '.');
+    const num = parseFloat(str);
+    if (isNaN(num)) return 0;
+    if (str.includes('min')) return num / 60;
+    return num; 
+}
+
+// Drag & Drop -funktiot (vain kuukausikalenteriin)
+function raahausAlkoi(event, id) {
+    if (kayttajaRooli === 'katsoja') return;
+    event.dataTransfer.setData("text/plain", id);
+    event.target.style.opacity = "0.5"; 
+}
+
+function raahausPaattyi(event) {
+    event.target.style.opacity = "1";
+}
+
+function salliPudotus(event) {
+    if (kayttajaRooli === 'katsoja') return;
+    event.preventDefault(); 
+    event.dataTransfer.dropEffect = "move";
+}
+
+function korostaPudotusAlue(event, aktiivinen) {
+    if (kayttajaRooli === 'katsoja') return;
+    const element = event.currentTarget;
+    if (aktiivinen) {
+        element.style.backgroundColor = "#e8f8f5";
+        element.style.borderColor = "#2ecc71";
+    } else {
+        element.style.backgroundColor = element.getAttribute("data-default-bg") || "#ffffff";
+        element.style.borderColor = element.getAttribute("data-default-border") || "#bdc3c7";
+    }
+}
+
+async function pudotaKalenteriin(event, pvmStr) {
+    if (kayttajaRooli === 'katsoja') return;
+    event.preventDefault();
+    korostaPudotusAlue(event, false);
+    
+    const laiteId = event.dataTransfer.getData("text/plain");
+    if (laiteId) await tallennaSuunniteltuAika(laiteId, pvmStr);
+}
+
+async function pudotaBacklogiin(event) {
+    if (kayttajaRooli === 'katsoja') return;
+    event.preventDefault();
+    korostaPudotusAlue(event, false);
+    
+    const laiteId = event.dataTransfer.getData("text/plain");
+    if (laiteId) await poistaSuunniteltuAika(laiteId);
+}
+
+// Varaosien yhteenlasku logiikka
+function laskeVaraosaYhteenveto(suunnittelemattomat, aikataulutetutTalleKuulle) {
+    const osatYhteensa = {};
+    const kasitteleTyot = (tyot) => {
+        tyot.forEach(v => {
+            if (v.varaosatarpeet) {
+                const palaset = v.varaosatarpeet.split(',');
+                palaset.forEach(p => {
+                    let [nimi, maaraStr] = p.split(':');
+                    nimi = nimi ? nimi.trim().toUpperCase() : "";
+                    if (!nimi) return;
+                    let maara = maaraStr ? parseInt(maaraStr.trim()) : 1;
+                    if (isNaN(maara)) maara = 1;
+                    osatYhteensa[nimi] = (osatYhteensa[nimi] || 0) + maara;
+                });
+            }
+        });
+    };
+    kasitteleTyot(suunnittelemattomat);
+    kasitteleTyot(aikataulutetutTalleKuulle);
+    return osatYhteensa;
+}
+
+// Apufunktio korttien väritykselle ja ikoneille
+function getVikaTyyli(vika) {
+    let bg = "#fdf2e9", border = "#e67e22"; // Oletusväri
+    const tyyppi = vika.tyoTyyppi ? vika.tyoTyyppi.toLowerCase() : "";
+    
+    if (tyyppi === "peruskunnostus") { bg = "#eafaf1"; border = "#2ecc71"; } // Vihreä
+    else if (tyyppi === "vika") { bg = "#fdedec"; border = "#e74c3c"; } // Punainen
+    else { bg = "#ebf5fb"; border = "#3498db"; } // Sininen
+    
+    let prioIcon = "🟠"; // Keski (viiva)
+    if (vika.prio === "korkea") prioIcon = "🔴"; 
+    if (vika.prio === "matala") prioIcon = "🟡️"; 
+
+    return { bg, border, prioIcon };
+}
+
+// Pääfunktio näkymän generointiin
+function generoiSuunnitteluNakyma() {
+    const alue = document.getElementById("suunnittelu-alue");
+    if (!alue) return;
+
+    let suunnittelemattomat = [];
+    let aikataulutetut = {};
+
+    Object.entries(aktiivisetViat).forEach(([laiteId, vika]) => {
+        if (!vika) return;
+        const vikaData = {
+            id: laiteId,
+            otsikko: (typeof vika === "object" && vika.otsikko) ? vika.otsikko : "Vika",
+            prio: (typeof vika === "object" && vika.prio) ? vika.prio : "matala",
+            tyoTyyppi: (typeof vika === "object" && vika.tyoTyyppi) ? vika.tyoTyyppi : "Vika",
+            suunniteltu_pvm: (typeof vika === "object" && vika.suunniteltu_pvm) ? vika.suunniteltu_pvm : null,
+            kestoarvio: (typeof vika === "object" && vika.kestoarvio) ? vika.kestoarvio : "",
+            varaosatarpeet: (typeof vika === "object" && vika.varaosatarpeet) ? vika.varaosatarpeet : ""
+        };
+
+        if (vikaData.suunniteltu_pvm) {
+            if (!aikataulutetut[vikaData.suunniteltu_pvm]) aikataulutetut[vikaData.suunniteltu_pvm] = [];
+            aikataulutetut[vikaData.suunniteltu_pvm].push(vikaData);
+        } else {
+            suunnittelemattomat.push(vikaData);
+        }
+    });
+
+    let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style='color: #2980b9; margin: 0;'>Korjausten ja huoltojen suunnittelu 🗓️</h2>
+            <div style="display: flex; gap: 10px; background: #ecf0f1; padding: 5px; border-radius: 6px;">
+                <button onclick="vaihdaSuunnitteluNakymaa('kalenteri')" style="padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; ${suunnitteluNakymaTyyppi === 'kalenteri' ? 'background: #3498db; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);' : 'background: transparent; color: #7f8c8d;'}">📅 Kuukausikalenteri</button>
+                <button onclick="vaihdaSuunnitteluNakymaa('vuosi')" style="padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; ${suunnitteluNakymaTyyppi === 'vuosi' ? 'background: #3498db; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);' : 'background: transparent; color: #7f8c8d;'}">📊 Vuosikatsaus (Projekti)</button>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap;">
+    `;
+
+    if (suunnitteluNakymaTyyppi === 'kalenteri') {
+        // ================================================================= //
+        // === NÄKYMÄ 1: KUUKAUSIKALENTERI === //
+        // ================================================================= //
+        const vuosi = suunnitteluNykyinenPvm.getFullYear();
+        const kuukausi = suunnitteluNykyinenPvm.getMonth(); 
+        const ekaPaiva = new Date(vuosi, kuukausi, 1);
+        const vikaPaiva = new Date(vuosi, kuukausi + 1, 0);
+        const paiviaYhteensa = vikaPaiva.getDate();
+        
+        let aloituksenViikonpaiva = ekaPaiva.getDay(); 
+        aloituksenViikonpaiva = aloituksenViikonpaiva === 0 ? 7 : aloituksenViikonpaiva; 
+
+        let tamanKuunTyot = [];
+        for (let p = 1; p <= paiviaYhteensa; p++) {
+            const tkPvm = `${vuosi}-${String(kuukausi + 1).padStart(2, '0')}-${String(p).padStart(2, '0')}`;
+            if (aikataulutetut[tkPvm]) tamanKuunTyot.push(...aikataulutetut[tkPvm]);
+        }
+        const yhteenvetoOsat = laskeVaraosaYhteenveto(suunnittelemattomat, tamanKuunTyot);
+        const yhteenvetoAvaimet = Object.keys(yhteenvetoOsat).sort();
+        const kkNimet = ["Tammikuu", "Helmikuu", "Maaliskuu", "Huhtikuu", "Toukokuu", "Kesäkuu", "Heinäkuu", "Elokuu", "Syyskuu", "Lokakuu", "Marraskuu", "Joulukuu"];
+
+        html += `
+            <div style="flex: 1; min-width: 250px; max-width: 320px; background: #ecf0f1; padding: 15px; border-radius: 8px; border-top: 5px solid #e74c3c; height: 75vh; display: flex; flex-direction: column;">
+                <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px; font-size: 16px;">📌 Odottavat työt (${suunnittelemattomat.length})</h3>
+                <div style="flex: 1; overflow-y: auto; padding-right: 5px; border: 2px dashed transparent; border-radius: 6px; transition: 0.2s;" ondragover="salliPudotus(event)" ondrop="pudotaBacklogiin(event)" ondragenter="korostaPudotusAlue(event, true)" ondragleave="korostaPudotusAlue(event, false)" data-default-bg="transparent" data-default-border="transparent">
+        `;
+        if (suunnittelemattomat.length === 0) html += `<div style="color: #7f8c8d; font-style: italic; padding: 20px; text-align: center;">Kaikki työt aikataulutettu!</div>`;
+        else {
+            html += `<p style="font-size: 12px; color: #7f8c8d; margin-top: 0;">Raahaa työ oikealle halutulle päivälle 👇</p>`;
+            suunnittelemattomat.forEach(vika => html += luoDraggableVikaKortti(vika));
+        }
+        html += `</div>`;
+        
+        html += `
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #bdc3c7;">
+                    <h4 style="margin: 0 0 10px 0; color: #d35400; font-size: 14px;">📦 Varaosatarpeet (Odottavat + Tämä kk)</h4>
+                    <div style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #bdc3c7; max-height: 150px; overflow-y: auto; font-size: 12px; color: #2c3e50;">
+        `;
+        if (yhteenvetoAvaimet.length === 0) html += `<em style="color: #7f8c8d;">Ei varaosatarpeita kirjattu.</em>`;
+        else {
+            html += `<ul style="margin: 0; padding-left: 20px;">`;
+            yhteenvetoAvaimet.forEach(osa => html += `<li>${osa}: <strong style="color: #27ae60;">${yhteenvetoOsat[osa]} kpl</strong></li>`);
+            html += `</ul>`;
+        }
+        html += `</div></div></div>`; 
+
+        html += `
+            <div style="flex: 3; min-width: 500px; background: #f8f9f9; padding: 15px; border-radius: 8px; border-top: 5px solid #27ae60;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;">
+                    <button onclick="vaihdaSuunnitteluKuukausi(-1)" style="padding: 8px 15px; background: #34495e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">◀ Edellinen kk</button>
+                    <h3 style="margin: 0; color: #2c3e50; font-size: 20px;">${kkNimet[kuukausi]} ${vuosi}</h3>
+                    <button onclick="vaihdaSuunnitteluKuukausi(1)" style="padding: 8px 15px; background: #34495e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Seuraava kk ▶</button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 35px repeat(7, 1fr); gap: 6px;">
+                    <div></div>
+                    <div style="text-align: center; font-weight: bold; color: #7f8c8d; padding: 5px;">Ma</div>
+                    <div style="text-align: center; font-weight: bold; color: #7f8c8d; padding: 5px;">Ti</div>
+                    <div style="text-align: center; font-weight: bold; color: #7f8c8d; padding: 5px;">Ke</div>
+                    <div style="text-align: center; font-weight: bold; color: #7f8c8d; padding: 5px;">To</div>
+                    <div style="text-align: center; font-weight: bold; color: #7f8c8d; padding: 5px;">Pe</div>
+                    <div style="text-align: center; font-weight: bold; color: #e74c3c; padding: 5px;">La</div>
+                    <div style="text-align: center; font-weight: bold; color: #e74c3c; padding: 5px;">Su</div>
+        `;
+
+        html += `<div style="display: flex; align-items: center; justify-content: center; font-weight: bold; color: #95a5a6; font-size: 11px; background: #ecf0f1; border-radius: 4px; writing-mode: vertical-rl; transform: rotate(180deg);">Vko ${haeViikkonumero(ekaPaiva)}</div>`;
+        for (let i = 1; i < aloituksenViikonpaiva; i++) {
+            html += `<div style="background: #e5e8e8; border-radius: 4px; opacity: 0.5;"></div>`;
+        }
+
+        const tanaan = new Date();
+        const onkoNykyinenKk = (tanaan.getFullYear() === vuosi && tanaan.getMonth() === kuukausi);
+
+        for (let paiva = 1; paiva <= paiviaYhteensa; paiva++) {
+            const nykyD = new Date(vuosi, kuukausi, paiva);
+            const vkp = nykyD.getDay() || 7; 
+            if (paiva > 1 && vkp === 1) {
+                html += `<div style="display: flex; align-items: center; justify-content: center; font-weight: bold; color: #95a5a6; font-size: 11px; background: #ecf0f1; border-radius: 4px; writing-mode: vertical-rl; transform: rotate(180deg);">Vko ${haeViikkonumero(nykyD)}</div>`;
+            }
+
+            const tietokantaPvm = muotoileTietokantaPvm(nykyD);
+            const onTanaan = (onkoNykyinenKk && paiva === tanaan.getDate());
+            const solunTausta = onTanaan ? "#fcf3cf" : "#ffffff";
+            const solunReuna = onTanaan ? "#f1c40f" : "#bdc3c7";
+            const nroVari = onTanaan ? "#d35400" : "#34495e";
+            const paivanTyot = aikataulutetut[tietokantaPvm] || [];
+
+            html += `
+                <div style="background: ${solunTausta}; border: 1px solid ${solunReuna}; border-radius: 4px; min-height: 110px; display: flex; flex-direction: column; transition: 0.2s;" ondragover="salliPudotus(event)" ondrop="pudotaKalenteriin(event, '${tietokantaPvm}')" ondragenter="korostaPudotusAlue(event, true)" ondragleave="korostaPudotusAlue(event, false)" data-default-bg="${solunTausta}" data-default-border="${solunReuna}">
+                    <div style="text-align: right; padding: 4px 8px; font-weight: bold; color: ${nroVari}; border-bottom: 1px solid #ecf0f1; font-size: 14px;">${paiva}.</div>
+                    <div style="flex: 1; padding: 4px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; max-height: 150px;">
+            `;
+            paivanTyot.forEach(vika => html += luoPieniDraggableVikaKortti(vika));
+            html += `</div></div>`;
+        }
+        html += `</div></div>`; 
+
+    } else {
+        // ================================================================= //
+        // === NÄKYMÄ 2: VUOSIKATSAUS (Tiivis, summat alareunassa) ===       //
+        // ================================================================= //
+        const vuosi = suunnitteluNykyinenPvm.getFullYear();
+        
+        html += `
+            <div style="width: 100%; background: #f8f9f9; padding: 15px; border-radius: 8px; border-top: 5px solid #9b59b6; display: flex; flex-direction: column; height: 80vh;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;">
+                    <button onclick="vaihdaSuunnitteluVuosi(-1)" style="padding: 8px 15px; background: #8e44ad; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">◀ Edellinen vuosi</button>
+                    <div style="text-align: center;">
+                        <h3 style="margin: 0; color: #2c3e50; font-size: 22px;">Vuoden ${vuosi} aikataulu</h3>
+                        <span style="font-size: 12px; color: #7f8c8d;">Tiivis näkymä työtunneilla. Klikkaa työtä nähdäksesi lisätiedot.</span>
+                    </div>
+                    <button onclick="vaihdaSuunnitteluVuosi(1)" style="padding: 8px 15px; background: #8e44ad; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Seuraava vuosi ▶</button>
+                </div>
+
+                <div style="display: flex; gap: 6px; flex: 1; overflow-x: auto; padding-bottom: 10px;">
+        `;
+
+        const kkNimetLyhyt = ["Tammi", "Helmi", "Maalis", "Huhti", "Touko", "Kesä", "Heinä", "Elo", "Syys", "Loka", "Marras", "Joulu"];
+
+        for(let kk = 0; kk < 12; kk++) {
+            let kkTyot = [];
+            let kuukaudenTunnitYhteensa = 0; // UUSI: Tuntilaskurin muuttuja
+
+            const vikaPaiva = new Date(vuosi, kk + 1, 0).getDate();
+            for(let p = 1; p <= vikaPaiva; p++) {
+                const tkPvm = `${vuosi}-${String(kk + 1).padStart(2, '0')}-${String(p).padStart(2, '0')}`;
+                if(aikataulutetut[tkPvm]) {
+                    const tyotPvmOliolla = aikataulutetut[tkPvm].map(t => ({...t, pvmObject: new Date(vuosi, kk, p)}));
+                    kkTyot.push(...tyotPvmOliolla);
+                }
+            }
+
+            html += `
+                <div style="flex: 1; min-width: 140px; background: #ffffff; border: 1px solid #bdc3c7; border-radius: 4px; display: flex; flex-direction: column; overflow: hidden;">
+                    <div style="background: #ecf0f1; text-align: center; font-weight: bold; padding: 6px; font-size: 14px; border-bottom: 1px solid #bdc3c7; color: #34495e;">
+                        ${kkNimetLyhyt[kk]}
+                    </div>
+                    <div style="padding: 6px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1;">
+            `;
+
+            if (kkTyot.length === 0) {
+                html += `<div style="text-align: center; color: #bdc3c7; font-size: 11px; margin-top: 10px; font-style: italic;">Ei töitä</div>`;
+            } else {
+                kkTyot.forEach(vika => {
+                    // Lisätään työn kesto kuukauden kokonaistunteihin
+                    kuukaudenTunnitYhteensa += laskeKestoTunteina(vika.kestoarvio);
+
+                    const tyyli = getVikaTyyli(vika);
+                    const pvmStr = `${vika.pvmObject.getDate()}.${vika.pvmObject.getMonth()+1}.`;
+                    const vko = haeViikkonumero(vika.pvmObject);
+                    const tiedot = erotteleLaiteTiedot(vika.id);
+                    const kestoTieto = vika.kestoarvio ? ` | ⏱️ ${vika.kestoarvio}` : "";
+
+                    html += `
+                        <div onclick="avaaTiedot('${vika.id}')" style="background: ${tyyli.bg}; border-left: 4px solid ${tyyli.border}; padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: 0.1s;" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter='brightness(1)'" title="${vika.otsikko}\nTyö: ${tiedot.nimi}\nKesto: ${vika.kestoarvio || '-'}">
+                            <div style="color: #7f8c8d; font-weight: bold; margin-bottom: 3px; font-size: 10px;">
+                                Vko ${vko} &nbsp;|&nbsp; ${pvmStr} ${kestoTieto}
+                            </div>
+                            <div style="font-weight: bold; color: #2c3e50; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 1px;">
+                                ${tiedot.nimi}
+                            </div>
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #34495e;">
+                                ${tyyli.prioIcon} ${vika.otsikko}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            html += `</div>`; // Työlistan scrollaavan osuuden loppu
+            
+            // UUSI: Kuukauden yhteenlasketut tunnit kiinnitettynä sarakkeen alareunaan
+            if (kuukaudenTunnitYhteensa > 0) {
+                const pyoristettySumma = Math.round(kuukaudenTunnitYhteensa * 10) / 10;
+                html += `
+                    <div style="background: #fdf2e9; border-top: 1px solid #e67e22; padding: 6px; text-align: center; font-size: 12px; font-weight: bold; color: #d35400;">
+                        ⌛ Yht: ${pyoristettySumma} h
+                    </div>
+                `;
+            }
+            
+            html += `</div>`; // Sarakkeen loppu
+        }
+        
+        html += `</div></div>`; 
+    }
+
+    html += `</div>`; 
+    alue.innerHTML = html;
+}
+
+// Apufunktio: Normaali kortti (Odottavat listaan)
+function luoDraggableVikaKortti(vika) {
+    const tiedot = erotteleLaiteTiedot(vika.id);
+    const tyyli = getVikaTyyli(vika);
+    const raahausAttr = kayttajaRooli !== 'katsoja' ? `draggable="true" ondragstart="raahausAlkoi(event, '${vika.id}')" ondragend="raahausPaattyi(event)" style="cursor: grab;"` : '';
+    
+    return `
+        <div style="background: ${tyyli.bg}; border-left: 5px solid ${tyyli.border}; padding: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 8px;" ${raahausAttr}>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                <strong style="color: #2c3e50; font-size: 14px; line-height: 1.2;">
+                    <span title="Prioriteetti: ${vika.prio}">${tyyli.prioIcon}</span> ${vika.otsikko}
+                </strong>
+                <button onclick="avaaTiedot('${vika.id}')" style="background: none; border: none; cursor: pointer; font-size: 14px;" title="Avaa laitteen tiedot">🔍</button>
+            </div>
+            
+            <div style="font-size: 12px; color: #7f8c8d; line-height: 1.2; margin-bottom: 8px; font-weight: bold;">
+                ${tiedot.nimi}
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;" onmousedown="event.stopPropagation();">
+                <span style="font-size: 11px; color: #7f8c8d; font-weight: bold; width: 35px;">⏱ Kesto:</span>
+                <input type="text" value="${vika.kestoarvio || ''}" placeholder="esim. 2h tai 30min" onchange="tallennaSuunnitteluKentta('${vika.id}', 'kestoarvio', this.value)" style="width: 70px; padding: 2px 4px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px;" ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 6px;" onmousedown="event.stopPropagation();">
+                <span style="font-size: 11px; color: #7f8c8d; font-weight: bold; width: 35px;">🔧 Osat:</span>
+                <input type="text" value="${vika.varaosatarpeet || ''}" placeholder="Laakeri:2, Hihna:1" onchange="tallennaSuunnitteluKentta('${vika.id}', 'varaosatarpeet', this.value)" style="flex: 1; padding: 2px 4px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px;" ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}>
+            </div>
+        </div>
+    `;
+}
+
+// Apufunktio: Pieni kortti (Kalenterin sisään - Nyt muokattavilla kentillä)
+function luoPieniDraggableVikaKortti(vika) {
+    const tiedot = erotteleLaiteTiedot(vika.id);
+    const tyyli = getVikaTyyli(vika);
+    const raahausAttr = kayttajaRooli !== 'katsoja' ? `draggable="true" ondragstart="raahausAlkoi(event, '${vika.id}')" ondragend="raahausPaattyi(event)" style="cursor: grab;"` : '';
+    
+    return `
+        <div style="background: ${tyyli.bg}; border-left: 4px solid ${tyyli.border}; padding: 6px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-size: 11px; margin-bottom: 2px;" ${raahausAttr}>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                <span style="font-weight: bold; color: #2c3e50; line-height: 1.2;" title="${tiedot.nimi} - ${vika.otsikko}">
+                    <span title="Prioriteetti: ${vika.prio}">${tyyli.prioIcon}</span> ${vika.otsikko}
+                </span>
+                <button onclick="avaaTiedot('${vika.id}')" style="background: none; border: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px;">🔍</button>
+            </div>
+            
+            <div style="font-size: 10px; color: #7f8c8d; margin-bottom: 4px; font-weight: bold;"> ${tiedot.nimi}</div>
+
+            <div style="display: flex; gap: 4px;" onmousedown="event.stopPropagation();">
+                <input type="text" value="${vika.kestoarvio || ''}" 
+                       placeholder="2h"
+                       title="Kestoarvio"
+                       onchange="tallennaSuunnitteluKentta('${vika.id}', 'kestoarvio', this.value)"
+                       style="width: 35px; padding: 2px; font-size: 9px; border: 1px solid #ccc; border-radius: 2px; background: rgba(255,255,255,0.8);"
+                       ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}>
+                       
+                <input type="text" value="${vika.varaosatarpeet || ''}" 
+                       placeholder="Osat (Nimi:Määrä)"
+                       title="Varaosatarpeet"
+                       onchange="tallennaSuunnitteluKentta('${vika.id}', 'varaosatarpeet', this.value)"
+                       style="flex: 1; padding: 2px; font-size: 9px; border: 1px solid #ccc; border-radius: 2px; background: rgba(255,255,255,0.8);"
+                       ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}>
+            </div>
+        </div>
+    `;
+}
+
+// Tietokantaan tallentamisen funktiot
+async function tallennaSuunnitteluKentta(laiteId, kentta, uusiArvo) {
+    if (kayttajaRooli === 'katsoja') return;
+    try {
+        const updateObj = {}; updateObj[kentta] = uusiArvo;
+        const { error } = await supabaseclient.from('aktiiviset_viat').update(updateObj).eq('laite_id', laiteId);
+        if (error) throw error;
+        if (typeof aktiivisetViat[laiteId] === 'object') aktiivisetViat[laiteId][kentta] = uusiArvo;
+        generoiSuunnitteluNakyma();
+    } catch (err) { console.error(`Virhe tallennettaessa kenttää ${kentta}:`, err); }
+}
+
+async function tallennaSuunniteltuAika(laiteId, uusiPvm) {
+    if (kayttajaRooli === 'katsoja') return;
+    try {
+        const { error } = await supabaseclient.from('aktiiviset_viat').update({ suunniteltu_pvm: uusiPvm }).eq('laite_id', laiteId);
+        if (error) throw error;
+        if (typeof aktiivisetViat[laiteId] === 'object') aktiivisetViat[laiteId].suunniteltu_pvm = uusiPvm;
+        generoiSuunnitteluNakyma();
+    } catch (err) { alert("Tallennus epäonnistui: " + err.message); }
+}
+
+async function poistaSuunniteltuAika(laiteId) {
+    if (kayttajaRooli === 'katsoja') return;
+    try {
+        const { error } = await supabaseclient.from('aktiiviset_viat').update({ suunniteltu_pvm: null }).eq('laite_id', laiteId);
+        if (error) throw error;
+        if (typeof aktiivisetViat[laiteId] === 'object') aktiivisetViat[laiteId].suunniteltu_pvm = null;
+        generoiSuunnitteluNakyma();
+    } catch (err) { alert("Poisto epäonnistui: " + err.message); }
 }
