@@ -66,10 +66,11 @@
             <option value="SM">SM</option>
         </select>
         <button id="btnLista" class="taso-nappi" onclick="vaihdaTaso('lista')">Kaikki positiot</button>
-        <button id="btnKaapit" class="taso-nappi tablink" onclick="vaihdaTaso('kaapit')">⚡ Sähkökeskukset</button>  
+        <button id="btnKaapit" class="taso-nappi tablink" onclick="vaihdaTaso('kaapit')">Sähkökeskukset</button>  
         <button id="btnKokoHistoria" class="taso-nappi" onclick="vaihdaTaso('historia')">Koko historia</button>
         <button id="btnViat" class="taso-nappi" onclick="vaihdaTaso('viat')">Aktiiviset viat</button>
-        <button id="btnVaraosat" class="taso-nappi" onclick="vaihdaTaso('varaosat')">⚙️ Varaosat</button>
+        <button id="btnVaraosat" class="taso-nappi" onclick="vaihdaTaso('varaosat')">Varaosat</button>
+		<button id="btnSuunnittelu" class="taso-nappi" onclick="vaihdaTaso('suunnittelu')">Suunnittelu</button>
         <button class="taso-nappi" style="border-color: white; color: green;" onclick="lataaExcel(true)">📥 Vie</button>
         
         <button class="taso-nappi admin-vain" style="border-color: white; color: red;" onclick="document.getElementById('csvTuonti').click()">📤 Tuo </button>
@@ -88,6 +89,7 @@
     <div id="viat-alue" class="lista-nakyma-container" style="background-color: #fcf3f2; border-color: #e74c3c; display:none;"></div>
     <div id="historia-alue" class="lista-nakyma-container" style="background-color: #f4f6f7; border-color: #8e44ad; display:none;"></div>
     <div id="varaosat-alue" style="display: none; padding: 20px;"></div>
+	<div id="suunnittelu-alue" style="display: none; padding: 20px;"></div>
     
     <div class="kartta-alue">
         <svg width="100%" height="100%" viewBox="-300 -200 1850 1600" style="position: absolute; top: 0; left: 0; overflow: hidden;">
