@@ -10,7 +10,7 @@
         #login-form input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         #login-btn { width: 100%; padding: 10px; background-color: #3498db; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         #login-btn:hover { background-color: #2980b9; }
-        #logout-btn { background-color: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: auto; }
+        #logout-btn { background-color: #e74c3c; color: white; border: none; padding: 2px 2px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: auto; }
         #logout-btn:hover { background-color: #c0392b; }
         #login-error { color: #e74c3c; margin-top: 10px; font-size: 14px; display: none; }
         .admin-vain { display: none !important; }
@@ -74,15 +74,17 @@
         <button class="taso-nappi" style="border-color: white; color: green;" onclick="lataaExcel(true)">📥 Vie</button>
         
         <button class="taso-nappi admin-vain" style="border-color: white; color: red;" onclick="document.getElementById('csvTuonti').click()">📤 Tuo </button>
-    
         <input type="file" id="varaosatTuonti" accept=".xlsx, .xls" onchange="tuoVaraosatExcel(event)" style="display: none;">
-        <button class="admin-vain" onclick="document.getElementById('varaosatTuonti').click()" style="padding: 8px 16px; background-color: #8e44ad; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-left: 10px;">
-            📦 Tuo Varaosat (Excel)
-        </button>
+        <!--<button class="admin-vain" onclick="document.getElementById('varaosatTuonti').click()" style="padding: 8px 16px; background-color: #2ecc71; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-left: 10px;">
+            Tuo Varaosat
+        </button> -->		
         <input type="file" id="csvTuonti" accept=".csv" style="display: none;" onchange="tuoCSVHistoria(event)">
- 
+ <!-- Kirjautuneen käyttäjän tiedot -->
+<div id="kayttaja-info" style="font-size: 13px; color: #2c3e50; font-weight: bold; background: #ecf0f1; padding: 6px 12px; border-radius: 4px; border: 1px solid #bdc3c7; display: flex; align-items: center; gap: 6px; z-index: 1000;">
+    <span id="kayttaja-nimi">Ladataan...</span>
 
         <button id="logout-btn" onclick="suoritaUloskirjautuminen()">Kirjaudu ulos</button>
+</div>		
     </div>
 
     <div id="lista-alue" class="lista-nakyma-container"></div>
