@@ -499,6 +499,7 @@ function generoiListanakyma() {
 
 let suunnitteluNykyinenPvm = new Date(); 
 let suunnitteluNakymaTyyppi = 'kalenteri'; // 'kalenteri' tai 'vuosi'
+let suunnitteluHakuTeksti = ""; // UUSI: Tallentaa hakukentän arvon
 
 function vaihdaSuunnitteluKuukausi(suunta) {
     suunnitteluNykyinenPvm.setMonth(suunnitteluNykyinenPvm.getMonth() + suunta);
@@ -515,6 +516,30 @@ function vaihdaSuunnitteluNakymaa(tyyppi) {
     generoiSuunnitteluNakyma();
 }
 
+// UUSI: Funktio joka suodattaa kortit reaaliajassa (ilman koko näkymän latausta)
+function suodataOdottavat(hakusana) {
+    suunnitteluHakuTeksti = hakusana;
+    const haku = hakusana.toLowerCase();
+    const kortit = document.querySelectorAll('.odottava-kortti');
+    let nakyvat = 0;
+    
+    kortit.forEach(kortti => {
+        const teksti = kortti.getAttribute('data-haku').toLowerCase();
+        if (teksti.includes(haku)) {
+            kortti.style.display = "block";
+            nakyvat++;
+        } else {
+            kortti.style.display = "none";
+        }
+    });
+    
+    // Päivitetään myös otsikon lukumäärä
+    const otsikko = document.getElementById("odottavat-otsikko-lkm");
+    if(otsikko) {
+        otsikko.innerText = haku ? `(${nakyvat} / ${kortit.length})` : `(${kortit.length})`;
+    }
+}
+
 // Apufunktio viikkonumeron laskemiseen (ISO 8601)
 function haeViikkonumero(date) {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -524,12 +549,10 @@ function haeViikkonumero(date) {
     return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }
 
-// Apufunktio päivämäärän muotoiluun YYYY-MM-DD
 function muotoileTietokantaPvm(d) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-// Apufunktio työn keston muuttamiseen tunneiksi laskentaa varten (Ymmärtää: "2h", "1,5", "30min" jne.)
 function laskeKestoTunteina(arvioStr) {
     if (!arvioStr) return 0;
     const str = String(arvioStr).toLowerCase().replace(',', '.');
@@ -539,7 +562,7 @@ function laskeKestoTunteina(arvioStr) {
     return num; 
 }
 
-// Drag & Drop -funktiot (vain kuukausikalenteriin)
+// Drag & Drop -funktiot
 function raahausAlkoi(event, id) {
     if (kayttajaRooli === 'katsoja') return;
     event.dataTransfer.setData("text/plain", id);
@@ -586,7 +609,6 @@ async function pudotaBacklogiin(event) {
     if (laiteId) await poistaSuunniteltuAika(laiteId);
 }
 
-// Varaosien yhteenlasku logiikka
 function laskeVaraosaYhteenveto(suunnittelemattomat, aikataulutetutTalleKuulle) {
     const osatYhteensa = {};
     const kasitteleTyot = (tyot) => {
@@ -609,18 +631,17 @@ function laskeVaraosaYhteenveto(suunnittelemattomat, aikataulutetutTalleKuulle) 
     return osatYhteensa;
 }
 
-// Apufunktio korttien väritykselle ja ikoneille
 function getVikaTyyli(vika) {
-    let bg = "#fdf2e9", border = "#e67e22"; // Oletusväri
+    let bg = "#fdf2e9", border = "#e67e22"; 
     const tyyppi = vika.tyoTyyppi ? vika.tyoTyyppi.toLowerCase() : "";
     
-    if (tyyppi === "peruskunnostus") { bg = "#eafaf1"; border = "#2ecc71"; } // Vihreä
-    else if (tyyppi === "vika") { bg = "#fdedec"; border = "#e74c3c"; } // Punainen
-    else { bg = "#ebf5fb"; border = "#3498db"; } // Sininen
+    if (tyyppi === "peruskunnostus") { bg = "#ffffff"; border = "#2ec700"; } 
+    else if (tyyppi === "vika") { bg = "#ffffff"; border = "#ff0000"; } 
+    else { bg = "#ebf5fb"; border = "#3498db"; } 
     
-    let prioIcon = "🟠"; // Keski (viiva)
-    if (vika.prio === "korkea") prioIcon = "🔴"; 
-    if (vika.prio === "matala") prioIcon = "🟡️"; 
+    let prioIcon = "🟠"; 
+    if (vika.prio === "korkea") prioIcon = "🔴️"; 
+    if (vika.prio === "matala") prioIcon = "🟡"; 
 
     return { bg, border, prioIcon };
 }
@@ -655,10 +676,10 @@ function generoiSuunnitteluNakyma() {
 
     let html = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h2 style='color: #2980b9; margin: 0;'>Korjausten ja huoltojen suunnittelu 🗓️</h2>
+            <h2 style='color: #2980b9; margin: 0;'>Huoltojen suunnittelu ️</h2>
             <div style="display: flex; gap: 10px; background: #ecf0f1; padding: 5px; border-radius: 6px;">
-                <button onclick="vaihdaSuunnitteluNakymaa('kalenteri')" style="padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; ${suunnitteluNakymaTyyppi === 'kalenteri' ? 'background: #3498db; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);' : 'background: transparent; color: #7f8c8d;'}">📅 Kuukausikalenteri</button>
-                <button onclick="vaihdaSuunnitteluNakymaa('vuosi')" style="padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; ${suunnitteluNakymaTyyppi === 'vuosi' ? 'background: #3498db; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);' : 'background: transparent; color: #7f8c8d;'}">📊 Vuosikatsaus (Projekti)</button>
+                <button onclick="vaihdaSuunnitteluNakymaa('kalenteri')" style="padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; ${suunnitteluNakymaTyyppi === 'kalenteri' ? 'background: #3498db; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);' : 'background: transparent; color: #7f8c8d;'}">Kuukausinäkymä</button>
+                <button onclick="vaihdaSuunnitteluNakymaa('vuosi')" style="padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; ${suunnitteluNakymaTyyppi === 'vuosi' ? 'background: #3498db; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);' : 'background: transparent; color: #7f8c8d;'}">Vuosinäkymä</button>
             </div>
         </div>
         
@@ -666,9 +687,6 @@ function generoiSuunnitteluNakyma() {
     `;
 
     if (suunnitteluNakymaTyyppi === 'kalenteri') {
-        // ================================================================= //
-        // === NÄKYMÄ 1: KUUKAUSIKALENTERI === //
-        // ================================================================= //
         const vuosi = suunnitteluNykyinenPvm.getFullYear();
         const kuukausi = suunnitteluNykyinenPvm.getMonth(); 
         const ekaPaiva = new Date(vuosi, kuukausi, 1);
@@ -687,21 +705,46 @@ function generoiSuunnitteluNakyma() {
         const yhteenvetoAvaimet = Object.keys(yhteenvetoOsat).sort();
         const kkNimet = ["Tammikuu", "Helmikuu", "Maaliskuu", "Huhtikuu", "Toukokuu", "Kesäkuu", "Heinäkuu", "Elokuu", "Syyskuu", "Lokakuu", "Marraskuu", "Joulukuu"];
 
+        // Lasketaan montako työtä osuu nykyiseen hakuun (otsikkoa varten)
+        const osumat = suunnitteluHakuTeksti ? suunnittelemattomat.filter(v => (v.id + " " + v.otsikko).toLowerCase().includes(suunnitteluHakuTeksti)).length : suunnittelemattomat.length;
+        const otsikkoLkm = suunnitteluHakuTeksti ? `(${osumat} / ${suunnittelemattomat.length})` : `(${suunnittelemattomat.length})`;
+
+        // ============================
+        // VASEN: ODOTTAVAT TYÖT & HAKU
+        // ============================
         html += `
             <div style="flex: 1; min-width: 250px; max-width: 320px; background: #ecf0f1; padding: 15px; border-radius: 8px; border-top: 5px solid #e74c3c; height: 75vh; display: flex; flex-direction: column;">
-                <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px; font-size: 16px;">📌 Odottavat työt (${suunnittelemattomat.length})</h3>
+                
+                <!-- Otsikko -->
+                <h3 style="margin-top: 0; color: #2c3e50; margin-bottom: 10px; font-size: 16px;">
+                    Odottavat <span id="odottavat-otsikko-lkm" style="color: #7f8c8d;">${otsikkoLkm}</span>
+                </h3>
+                
+                <!-- Hakukenttä -->
+                <input type="text" id="suunnitteluHakuInput" placeholder="🔍 Hae (esim. KL1, laakeri)..." 
+                       value="${suunnitteluHakuTeksti}" 
+                       oninput="suodataOdottavat(this.value)" 
+                       style="width: 100%; padding: 8px; border: 1px solid #bdc3c7; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box; outline: none; font-size: 13px;">
+                
+                <!-- Drag&Drop alue -->
                 <div style="flex: 1; overflow-y: auto; padding-right: 5px; border: 2px dashed transparent; border-radius: 6px; transition: 0.2s;" ondragover="salliPudotus(event)" ondrop="pudotaBacklogiin(event)" ondragenter="korostaPudotusAlue(event, true)" ondragleave="korostaPudotusAlue(event, false)" data-default-bg="transparent" data-default-border="transparent">
         `;
-        if (suunnittelemattomat.length === 0) html += `<div style="color: #7f8c8d; font-style: italic; padding: 20px; text-align: center;">Kaikki työt aikataulutettu!</div>`;
-        else {
-            html += `<p style="font-size: 12px; color: #7f8c8d; margin-top: 0;">Raahaa työ oikealle halutulle päivälle 👇</p>`;
-            suunnittelemattomat.forEach(vika => html += luoDraggableVikaKortti(vika));
-        }
-        html += `</div>`;
         
+        if (suunnittelemattomat.length === 0) {
+            html += `<div style="color: #7f8c8d; font-style: italic; padding: 20px; text-align: center;">Kaikki työt aikataulutettu!</div>`;
+        } else {
+            suunnittelemattomat.forEach(vika => {
+                // Määritetään näytetäänkö kortti heti sivun latauksessa jos hakusana on muistissa
+                const isMatch = !suunnitteluHakuTeksti || (vika.id + " " + vika.otsikko).toLowerCase().includes(suunnitteluHakuTeksti.toLowerCase());
+                html += luoDraggableVikaKortti(vika, isMatch ? "block" : "none");
+            });
+        }
+        html += `</div>`; // Drag alue kiinni
+        
+        // Varaosayhteenveto
         html += `
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #bdc3c7;">
-                    <h4 style="margin: 0 0 10px 0; color: #d35400; font-size: 14px;">📦 Varaosatarpeet (Odottavat + Tämä kk)</h4>
+                    <h4 style="margin: 0 0 10px 0; color: #d35400; font-size: 14px;">Varaosatarpeet (Odottavat + Tämä kk)</h4>
                     <div style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #bdc3c7; max-height: 150px; overflow-y: auto; font-size: 12px; color: #2c3e50;">
         `;
         if (yhteenvetoAvaimet.length === 0) html += `<em style="color: #7f8c8d;">Ei varaosatarpeita kirjattu.</em>`;
@@ -712,6 +755,9 @@ function generoiSuunnitteluNakyma() {
         }
         html += `</div></div></div>`; 
 
+        // ============================
+        // OIKEA: KALENTERI
+        // ============================
         html += `
             <div style="flex: 3; min-width: 500px; background: #f8f9f9; padding: 15px; border-radius: 8px; border-top: 5px solid #27ae60;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;">
@@ -748,14 +794,14 @@ function generoiSuunnitteluNakyma() {
 
             const tietokantaPvm = muotoileTietokantaPvm(nykyD);
             const onTanaan = (onkoNykyinenKk && paiva === tanaan.getDate());
-            const solunTausta = onTanaan ? "#fcf3cf" : "#ffffff";
-            const solunReuna = onTanaan ? "#f1c40f" : "#bdc3c7";
-            const nroVari = onTanaan ? "#d35400" : "#34495e";
+            const solunTausta = onTanaan ? "#ffffff" : "#ffffff";
+            const solunReuna = onTanaan ? "#ff0000" : "#bdc3c7";
+            const nroVari = onTanaan ? "#ff0000" : "#34495e";
             const paivanTyot = aikataulutetut[tietokantaPvm] || [];
 
             html += `
-                <div style="background: ${solunTausta}; border: 1px solid ${solunReuna}; border-radius: 4px; min-height: 110px; display: flex; flex-direction: column; transition: 0.2s;" ondragover="salliPudotus(event)" ondrop="pudotaKalenteriin(event, '${tietokantaPvm}')" ondragenter="korostaPudotusAlue(event, true)" ondragleave="korostaPudotusAlue(event, false)" data-default-bg="${solunTausta}" data-default-border="${solunReuna}">
-                    <div style="text-align: right; padding: 4px 8px; font-weight: bold; color: ${nroVari}; border-bottom: 1px solid #ecf0f1; font-size: 14px;">${paiva}.</div>
+                <div style="background: ${solunTausta}; border: 2px solid ${solunReuna}; border-radius: 4px; min-height: 110px; display: flex; flex-direction: column; transition: 0.2s;" ondragover="salliPudotus(event)" ondrop="pudotaKalenteriin(event, '${tietokantaPvm}')" ondragenter="korostaPudotusAlue(event, true)" ondragleave="korostaPudotusAlue(event, false)" data-default-bg="${solunTausta}" data-default-border="${solunReuna}">
+                    <div style="text-align: right; padding: 4px 8px; font-weight: bold; border-bottom: 1px solid #ecf0f1; font-size: 14px;">${paiva}.</div>
                     <div style="flex: 1; padding: 4px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; max-height: 150px;">
             `;
             paivanTyot.forEach(vika => html += luoPieniDraggableVikaKortti(vika));
@@ -765,17 +811,17 @@ function generoiSuunnitteluNakyma() {
 
     } else {
         // ================================================================= //
-        // === NÄKYMÄ 2: VUOSIKATSAUS (Tiivis, summat alareunassa) ===       //
+        // === NÄKYMÄ 2: VUOSIKATSAUS (Koko ruutu) === //
         // ================================================================= //
         const vuosi = suunnitteluNykyinenPvm.getFullYear();
         
         html += `
-            <div style="width: 100%; background: #f8f9f9; padding: 15px; border-radius: 8px; border-top: 5px solid #9b59b6; display: flex; flex-direction: column; height: 80vh;">
+            <div style="width: 100%; background: #f8f9f9; padding: 15px; border-radius: 8px; border-top: 5px solid #27ae60; display: flex; flex-direction: column; height: 80vh;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;">
                     <button onclick="vaihdaSuunnitteluVuosi(-1)" style="padding: 8px 15px; background: #8e44ad; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">◀ Edellinen vuosi</button>
                     <div style="text-align: center;">
                         <h3 style="margin: 0; color: #2c3e50; font-size: 22px;">Vuoden ${vuosi} aikataulu</h3>
-                        <span style="font-size: 12px; color: #7f8c8d;">Tiivis näkymä työtunneilla. Klikkaa työtä nähdäksesi lisätiedot.</span>
+
                     </div>
                     <button onclick="vaihdaSuunnitteluVuosi(1)" style="padding: 8px 15px; background: #8e44ad; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Seuraava vuosi ▶</button>
                 </div>
@@ -787,7 +833,7 @@ function generoiSuunnitteluNakyma() {
 
         for(let kk = 0; kk < 12; kk++) {
             let kkTyot = [];
-            let kuukaudenTunnitYhteensa = 0; // UUSI: Tuntilaskurin muuttuja
+            let kuukaudenTunnitYhteensa = 0;
 
             const vikaPaiva = new Date(vuosi, kk + 1, 0).getDate();
             for(let p = 1; p <= vikaPaiva; p++) {
@@ -807,17 +853,16 @@ function generoiSuunnitteluNakyma() {
             `;
 
             if (kkTyot.length === 0) {
-                html += `<div style="text-align: center; color: #bdc3c7; font-size: 11px; margin-top: 10px; font-style: italic;">Ei töitä</div>`;
+                html += `<div style="text-align: center; color: #bdc3c7; font-size: 11px; margin-top: 10px; font-style: italic;">Ei suunniteltuja töitä</div>`;
             } else {
                 kkTyot.forEach(vika => {
-                    // Lisätään työn kesto kuukauden kokonaistunteihin
                     kuukaudenTunnitYhteensa += laskeKestoTunteina(vika.kestoarvio);
 
                     const tyyli = getVikaTyyli(vika);
                     const pvmStr = `${vika.pvmObject.getDate()}.${vika.pvmObject.getMonth()+1}.`;
                     const vko = haeViikkonumero(vika.pvmObject);
                     const tiedot = erotteleLaiteTiedot(vika.id);
-                    const kestoTieto = vika.kestoarvio ? ` | ⏱️ ${vika.kestoarvio}` : "";
+                    const kestoTieto = vika.kestoarvio ? ` | ⏱️ ${vika.kestoarvio} h` : "";
 
                     html += `
                         <div onclick="avaaTiedot('${vika.id}')" style="background: ${tyyli.bg}; border-left: 4px solid ${tyyli.border}; padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: 0.1s;" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter='brightness(1)'" title="${vika.otsikko}\nTyö: ${tiedot.nimi}\nKesto: ${vika.kestoarvio || '-'}">
@@ -834,19 +879,18 @@ function generoiSuunnitteluNakyma() {
                     `;
                 });
             }
-            html += `</div>`; // Työlistan scrollaavan osuuden loppu
+            html += `</div>`; 
             
-            // UUSI: Kuukauden yhteenlasketut tunnit kiinnitettynä sarakkeen alareunaan
             if (kuukaudenTunnitYhteensa > 0) {
                 const pyoristettySumma = Math.round(kuukaudenTunnitYhteensa * 10) / 10;
                 html += `
                     <div style="background: #fdf2e9; border-top: 1px solid #e67e22; padding: 6px; text-align: center; font-size: 12px; font-weight: bold; color: #d35400;">
-                        ⌛ Yht: ${pyoristettySumma} h
+                         Yht: ${pyoristettySumma} h
                     </div>
                 `;
             }
             
-            html += `</div>`; // Sarakkeen loppu
+            html += `</div>`; 
         }
         
         html += `</div></div>`; 
@@ -856,39 +900,42 @@ function generoiSuunnitteluNakyma() {
     alue.innerHTML = html;
 }
 
-// Apufunktio: Normaali kortti (Odottavat listaan)
-function luoDraggableVikaKortti(vika) {
+// UUSI PARAMETRI: displayStyle ohjaa näytetäänkö kortti sivun renderöinnissä
+function luoDraggableVikaKortti(vika, displayStyle = "block") {
     const tiedot = erotteleLaiteTiedot(vika.id);
     const tyyli = getVikaTyyli(vika);
     const raahausAttr = kayttajaRooli !== 'katsoja' ? `draggable="true" ondragstart="raahausAlkoi(event, '${vika.id}')" ondragend="raahausPaattyi(event)" style="cursor: grab;"` : '';
     
+    // Suodattamista varten kerätään kaikki tekstidata kortin attribuuttiin
+    const hakuData = `${vika.id} ${vika.otsikko}`.replace(/"/g, '&quot;');
+    
     return `
-        <div style="background: ${tyyli.bg}; border-left: 5px solid ${tyyli.border}; padding: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 8px;" ${raahausAttr}>
+        <div class="odottava-kortti" data-haku="${hakuData}" style="display: ${displayStyle}; background: ${tyyli.bg}; border-left: 5px solid ${tyyli.border}; padding: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 8px;" ${raahausAttr}>
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
                 <strong style="color: #2c3e50; font-size: 14px; line-height: 1.2;">
-                    <span title="Prioriteetti: ${vika.prio}">${tyyli.prioIcon}</span> ${vika.otsikko}
+                    ${vika.otsikko}
                 </strong>
                 <button onclick="avaaTiedot('${vika.id}')" style="background: none; border: none; cursor: pointer; font-size: 14px;" title="Avaa laitteen tiedot">🔍</button>
             </div>
             
             <div style="font-size: 12px; color: #7f8c8d; line-height: 1.2; margin-bottom: 8px; font-weight: bold;">
-                ${tiedot.nimi}
+                ${tiedot.nimi} <span title="Prioriteetti: ${vika.prio}">${tyyli.prioIcon}</span> 
             </div>
             
             <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;" onmousedown="event.stopPropagation();">
-                <span style="font-size: 11px; color: #7f8c8d; font-weight: bold; width: 35px;">⏱ Kesto:</span>
-                <input type="text" value="${vika.kestoarvio || ''}" placeholder="esim. 2h tai 30min" onchange="tallennaSuunnitteluKentta('${vika.id}', 'kestoarvio', this.value)" style="width: 70px; padding: 2px 4px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px;" ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}>
+                <span style="font-size: 11px; color: #7f8c8d; font-weight: bold; width: 35px;">Kesto:</span>
+                <input type="text" value="${vika.kestoarvio || ''}" placeholder="0" onchange="tallennaSuunnitteluKentta('${vika.id}', 'kestoarvio', this.value)" style="width: 15px; padding: 2px 4px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px;" ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}><span style="font-size: 11px; color: #7f8c8d; font-weight: bold; width: 35px;">tuntia</span>
             </div>
 
             <div style="display: flex; align-items: center; gap: 6px;" onmousedown="event.stopPropagation();">
-                <span style="font-size: 11px; color: #7f8c8d; font-weight: bold; width: 35px;">🔧 Osat:</span>
-                <input type="text" value="${vika.varaosatarpeet || ''}" placeholder="Laakeri:2, Hihna:1" onchange="tallennaSuunnitteluKentta('${vika.id}', 'varaosatarpeet', this.value)" style="flex: 1; padding: 2px 4px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px;" ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}>
+                <span style="font-size: 11px; color: #7f8c8d; font-weight: bold; width: 35px;">Osat:</span>
+                <input type="text" value="${vika.varaosatarpeet || ''}" placeholder="BPM..." onchange="tallennaSuunnitteluKentta('${vika.id}', 'varaosatarpeet', this.value)" style="flex: 1; padding: 2px 4px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px;" ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}>
             </div>
         </div>
     `;
 }
 
-// Apufunktio: Pieni kortti (Kalenterin sisään - Nyt muokattavilla kentillä)
+// Apufunktio: Pieni kortti kalenteriin
 function luoPieniDraggableVikaKortti(vika) {
     const tiedot = erotteleLaiteTiedot(vika.id);
     const tyyli = getVikaTyyli(vika);
@@ -898,19 +945,19 @@ function luoPieniDraggableVikaKortti(vika) {
         <div style="background: ${tyyli.bg}; border-left: 4px solid ${tyyli.border}; padding: 6px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-size: 11px; margin-bottom: 2px;" ${raahausAttr}>
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
                 <span style="font-weight: bold; color: #2c3e50; line-height: 1.2;" title="${tiedot.nimi} - ${vika.otsikko}">
-                    <span title="Prioriteetti: ${vika.prio}">${tyyli.prioIcon}</span> ${vika.otsikko}
+                     ${vika.otsikko}
                 </span>
                 <button onclick="avaaTiedot('${vika.id}')" style="background: none; border: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px;">🔍</button>
             </div>
             
-            <div style="font-size: 10px; color: #7f8c8d; margin-bottom: 4px; font-weight: bold;"> ${tiedot.nimi}</div>
+            <div style="font-size: 10px; color: #7f8c8d; margin-bottom: 4px; font-weight: bold;">${tiedot.nimi} <span title="Prioriteetti: ${vika.prio}">${tyyli.prioIcon}</span></div>
 
             <div style="display: flex; gap: 4px;" onmousedown="event.stopPropagation();">
                 <input type="text" value="${vika.kestoarvio || ''}" 
                        placeholder="2h"
                        title="Kestoarvio"
                        onchange="tallennaSuunnitteluKentta('${vika.id}', 'kestoarvio', this.value)"
-                       style="width: 35px; padding: 2px; font-size: 9px; border: 1px solid #ccc; border-radius: 2px; background: rgba(255,255,255,0.8);"
+                       style="width: 15px; padding: 2px; font-size: 9px; border: 1px solid #ccc; border-radius: 2px; background: rgba(255,255,255,0.8);"
                        ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}>
                        
                 <input type="text" value="${vika.varaosatarpeet || ''}" 
