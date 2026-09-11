@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     generoi680Sarja();
     generoiSahkokeskukset();
     generoiSDKaappiSVG();
+	
     const tooltip = document.getElementById("rata-tooltip");
     const rataOsat = document.querySelectorAll(".rata-osa");
 

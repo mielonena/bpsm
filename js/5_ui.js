@@ -761,9 +761,9 @@ function generoiSuunnitteluNakyma() {
         html += `
             <div style="flex: 3; min-width: 500px; background: #f8f9f9; padding: 15px; border-radius: 8px; border-top: 5px solid #27ae60;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;">
-                    <button onclick="vaihdaSuunnitteluKuukausi(-1)" style="padding: 8px 15px; background: #34495e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">◀ Edellinen kk</button>
+                    <button onclick="vaihdaSuunnitteluKuukausi(-1)" style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">◀ Edellinen kk</button>
                     <h3 style="margin: 0; color: #2c3e50; font-size: 20px;">${kkNimet[kuukausi]} ${vuosi}</h3>
-                    <button onclick="vaihdaSuunnitteluKuukausi(1)" style="padding: 8px 15px; background: #34495e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Seuraava kk ▶</button>
+                    <button onclick="vaihdaSuunnitteluKuukausi(1)" style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Seuraava kk ▶</button>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 35px repeat(7, 1fr); gap: 6px;">

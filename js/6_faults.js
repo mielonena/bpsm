@@ -68,17 +68,16 @@ async function synkronoiLaitteenVikatila(id) {
             kommentti: vikaObj.kommentti, tyoNumero: vikaObj.tyo_numero, tyoTyyppi: vikaObj.tyo_tyyppi
         };
     } else {
-        // Jos uusia vikoja ei enää ole, poistetaan laite aktiiviset_viat -taulusta
         const { error } = await supabaseclient.from('aktiiviset_viat').delete().eq('laite_id', id);
         
         if (error) {
             console.error("Tietokanta esti vikatilan poistamisen (Tarkista RLS säännöt!):", error);
         } else {
-            // Poistetaan paikallisesta muistista vain, jos tietokantapoisto onnistui
             delete aktiivisetViat[id];
         }
     }
 }
+
 function paivitaVikaKartta() {
     document.querySelectorAll(".vika-pallo").forEach(pallo => pallo.remove());
     document.querySelectorAll(".lista-positio-nappi").forEach(btn => {
@@ -122,7 +121,6 @@ function paivitaVikaKartta() {
 }
 
 async function vaihdaVikaTilaa() {
-    // ESTO: Katsojat eivät saa ilmoittaa vikoja
     if (kayttajaRooli === 'katsoja') {
         alert("Vain luku -oikeus. Et voi tehdä muutoksia.");
         return;
@@ -162,10 +160,9 @@ async function vaihdaVikaTilaa() {
 }
 
 async function paivitaAktiivisenVianPrio(uusiPrio) {
-    // ESTO: Katsojat eivät saa muuttaa prioriteettia
     if (kayttajaRooli === 'katsoja') {
         alert("Vain luku -oikeus. Et voi tehdä muutoksia.");
-        paivitaModalinVikaTila(); // Palauttaa valikon visuaalisesti takaisin alkuperäiseen arvoon
+        paivitaModalinVikaTila();
         return;
     }
 
@@ -196,7 +193,6 @@ async function paivitaAktiivisenVianPrio(uusiPrio) {
 }
 
 function kuittaaAktiivinenVika() {
-    // ESTO: Katsojat eivät saa avata kuittauslomaketta täältäkään
     if (kayttajaRooli === 'katsoja') {
         alert("Vain luku -oikeus. Et voi tehdä muutoksia.");
         return;
@@ -335,9 +331,14 @@ function paivitaVikaLista() {
             let kommentti = (typeof tila === "object" && tila.kommentti) ? tila.kommentti : "-";
             let tyoNumero = (typeof tila === "object" && tila.tyoNumero) ? tila.tyoNumero : "-"; 
             let tyoTyyppi = (typeof tila === "object" && tila.tyoTyyppi) ? tila.tyoTyyppi : "Vika";
+            
+            // KORJAUS: Haetaan päivämäärä kentästä suunniteltu_pvm
+            let suunniteltu_pvm = (typeof tila === "object" && tila.suunniteltu_pvm) ? tila.suunniteltu_pvm : "-";
+            
             otsikko = otsikko.replace(/\s*\([^)]*\)\s*$/, '');
             kommentti = kommentti.replace(/\s*\(Työ:\s*[^)]*\)\s*$/, '');
-            return { id, prio, otsikko, sijainti, kommentti, tyoNumero, tyoTyyppi };
+            
+            return { id, prio, otsikko, sijainti, kommentti, tyoNumero, tyoTyyppi, suunniteltu_pvm };
         })
         .filter(item => {
             if (!vikaHakuTeksti) return true;
@@ -347,6 +348,7 @@ function paivitaVikaLista() {
                    item.prio.toLowerCase().includes(haku) ||
                    item.kommentti.toLowerCase().includes(haku) || 
                    item.sijainti.toLowerCase().includes(haku) ||
+                   item.suunniteltu_pvm.toLowerCase().includes(haku) ||
                    item.tyoNumero.toLowerCase().includes(haku) || 
                    item.tyoTyyppi.toLowerCase().includes(haku);
         });
@@ -398,14 +400,15 @@ function paivitaVikaLista() {
                     <thead>
                         <tr>
                             <th>Laite / Tunnus</th><th>Prioriteetti</th><th>Työnumero</th><th>Tyyppi</th>
-                            <th>Vian kuvaus</th><th>Sijainti laitteessa</th><th>Lisätiedot / Tarvittavat osat</th><th>Toiminnot</th>
+                            <th>Vian kuvaus</th><th>Sijainti laitteessa</th><th>Lisätiedot / Tarvittavat osat</th><th>Suunniteltu</th><th>Toiminnot</th>
                         </tr>
                     </thead>
                     <tbody>`;
         
         ryhmaAvaimet.forEach(ryhma => {
+            // KORJAUS: colspan asetettu yhdeksään, jotta se vastaa sarakkeiden määrää
             html += `<tr>
-                        <td colspan="8" style="background-color: #ecf0f1; color: #2c3e50; padding: 12px 15px; border-bottom: 2px solid #bdc3c7;">
+                        <td colspan="9" style="background-color: #ecf0f1; color: #2c3e50; padding: 12px 15px; border-bottom: 2px solid #bdc3c7;">
                             <h3 style="margin: 0; font-size: 16px;">📍 Linja / Ryhmä: ${ryhma}</h3>
                         </td>
                      </tr>`;
@@ -418,11 +421,23 @@ function paivitaVikaLista() {
                 const tiedot = erotteleLaiteTiedot(item.id);
                 const idTeksti = tiedot.nimi;
 
+                // Muotoillaan päivämäärä hienommaksi (YYYY-MM-DD -> DD.MM.YYYY), jos se on olemassa
+                let nayttoPvm = "-";
+                if (item.suunniteltu_pvm !== "-") {
+                    const osat = item.suunniteltu_pvm.split('-');
+                    if (osat.length === 3) nayttoPvm = `${osat[2]}.${osat[1]}.${osat[0]}`;
+                    else nayttoPvm = `${item.suunniteltu_pvm}`;
+                }
+
                 html += `<tr style="background-color: ${riviTausta}; font-weight: bold;">
-                            <td style="color: #2c3e50; font-size: 15px;">${idTeksti}</td><td>${prioTeksti}</td>
-                            <td>${item.tyoNumero}</td><td style="${tyyppiTyyli}">${item.tyoTyyppi}</td>
+                            <td style="color: #2c3e50; font-size: 15px;">${idTeksti}</td>
+                            <td>${prioTeksti}</td>
+                            <td>${item.tyoNumero}</td>
+                            <td style="${tyyppiTyyli}">${item.tyoTyyppi}</td>
                             <td style="color: #c0392b;">${item.otsikko}</td>
-                            <td>${item.sijainti}</td><td style="font-weight: normal; font-style: italic;">${item.kommentti}</td>
+                            <td>${item.sijainti}</td>
+                            <td style="font-weight: normal; font-style: italic;">${item.kommentti}</td>
+                            <td style="color: #2ec700;">${nayttoPvm}</td>
                             <td><button onclick="avaaTiedot('${item.id}')" style="padding: 6px 12px; background-color: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">✏️ Avaa & Kuittaa</button></td>
                         </tr>`;
             });
