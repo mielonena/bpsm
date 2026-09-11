@@ -54,7 +54,7 @@ async function tarkistaKirjautuminen() {
 }
 
 async function suoritaKirjautuminen() {
-    const email =- document.getElementById('login-email').value;
+    const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     const errorMsg = document.getElementById('login-error');
 
