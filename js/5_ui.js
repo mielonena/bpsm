@@ -803,7 +803,7 @@ function generoiSuunnitteluNakyma() {
             const paivanTyot = aikataulutetut[tietokantaPvm] || [];
 
             html += `
-                <div style="background: ${solunTausta}; border: 2px solid ${solunReuna}; border-radius: 4px; min-height: 110px; display: flex; flex-direction: column; transition: 0.2s;" ondragover="salliPudotus(event)" ondrop="pudotaKalenteriin(event, '${tietokantaPvm}')" ondragenter="korostaPudotusAlue(event, true)" ondragleave="korostaPudotusAlue(event, false)" data-default-bg="${solunTausta}" data-default-border="${solunReuna}">
+                <div style="background: ${solunTausta}; border: 2px solid ${solunReuna}; border-radius: 4px; min-height: 150px; display: flex; flex-direction: column; transition: 0.2s;" ondragover="salliPudotus(event)" ondrop="pudotaKalenteriin(event, '${tietokantaPvm}')" ondragenter="korostaPudotusAlue(event, true)" ondragleave="korostaPudotusAlue(event, false)" data-default-bg="${solunTausta}" data-default-border="${solunReuna}">
                     <div style="text-align: right; padding: 4px 8px; font-weight: bold; border-bottom: 1px solid #ecf0f1; font-size: 14px;">${paiva}.</div>
                     <div style="flex: 1; padding: 4px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; max-height: 150px;">
             `;
@@ -869,7 +869,7 @@ function generoiSuunnitteluNakyma() {
                     // UUSI: Tarkistetaan onko työ vanhentunut (mennyt ohi nykyisestä päivästä)
                     const onMenneisyydessa = onkoPaivaMenneisyydessa(vika.pvmStr);
                     const hylsyOpacity = onMenneisyydessa ? "opacity: 0.4;" : "opacity: 1;";
-                    const vanhentunutMerkinta = onMenneisyydessa ? ` <span style="color: #c0392b; font-weight: bold;">(Rästissä)</span>` : "";
+                    const vanhentunutMerkinta = onMenneisyydessa ? ` <span style="color: #c0392b; font-weight: bold;">(Myöhässä)</span>` : "";
 
                     html += `
                         <div onclick="avaaTiedot('${vika.id}')" style="background: ${tyyli.bg}; border-left: 4px solid ${tyyli.border}; padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: 0.1s; ${hylsyOpacity}" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter='brightness(1)'" title="${vika.otsikko}\nTyö: ${tiedot.nimi}\nKesto: ${vika.kestoarvio || '-'}">
