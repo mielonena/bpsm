@@ -34,7 +34,8 @@ function vaihdaTaso(taso) {
     if (varaosatAlue) varaosatAlue.style.display = "none";
     if(kaapitAlue) kaapitAlue.style.display = "none";
     if(suunnitteluAlue) suunnitteluAlue.style.display = "none";
-
+    paivitaVaunuNappienNakyvyys('piilota');
+	
     if (taso === 'lista') {
         document.getElementById("btnLista").classList.add("aktiivinen");
         if(listaAlue) listaAlue.style.display = "block";
@@ -101,17 +102,19 @@ function paivitaVaunuNappienNakyvyys(nakyma) {
     
     if (!btnYla || !btnAla) return;
 
-    // Oletetaan, että nakyma-muuttuja on joko 'ylakone', 'alakone' tai 'kokokone'
     if (nakyma === 'ylakone') {
         btnYla.style.display = "flex";
         btnAla.style.display = "none";
     } else if (nakyma === 'alakone') {
         btnYla.style.display = "none";
         btnAla.style.display = "flex";
-    } else {
-        // Koko kone -näkymä (näytetään molemmat)
+    } else if (nakyma === 'kokokone') {
         btnYla.style.display = "flex";
         btnAla.style.display = "flex";
+    } else {
+        // Jos näkymä on mikä tahansa muu (tai tyhjä), PIILOTETAAN MOLEMMAT NAPIT
+        btnYla.style.display = "none";
+        btnAla.style.display = "none";
     }
 }
 function vaihdaPeruskunnostusNakyma() {
