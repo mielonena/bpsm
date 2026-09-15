@@ -62,29 +62,58 @@ function vaihdaTaso(taso) {
         if (suunnitteluAlue) suunnitteluAlue.style.display = "block";
         generoiSuunnitteluNakyma();
     } else {
-        if(karttaAlue) karttaAlue.style.display = "block";
+		if(karttaAlue) karttaAlue.style.display = "block";
         if (taso === 'yla') {
             document.getElementById("btnYla").classList.add("aktiivinen");
             if(ylaNakyma) ylaNakyma.style.display = "block"; 
             if(alaNakyma) alaNakyma.style.display = "none";
             if (ylaRata) ylaRata.style.display = "block"; 
             if (alaRata) alaRata.style.display = "none";
+            
+            // Päivitetään vaununappien näkyvyys
+            paivitaVaunuNappienNakyvyys('ylakone');
+            
         } else if (taso === 'ala') {
             document.getElementById("btnAla").classList.add("aktiivinen");
             if(ylaNakyma) ylaNakyma.style.display = "none"; 
             if(alaNakyma) alaNakyma.style.display = "block";
             if (ylaRata) ylaRata.style.display = "none"; 
             if (alaRata) alaRata.style.display = "block";
+            
+            // Päivitetään vaununappien näkyvyys
+            paivitaVaunuNappienNakyvyys('alakone');
+            
         } else if (taso === 'kaikki') {
             document.getElementById("btnKaikki").classList.add("aktiivinen");
             if(ylaNakyma) ylaNakyma.style.display = "block"; 
             if(alaNakyma) alaNakyma.style.display = "block";
             if (ylaRata) ylaRata.style.display = "block"; 
             if (alaRata) alaRata.style.display = "block";
+            
+            // Päivitetään vaununappien näkyvyys
+            paivitaVaunuNappienNakyvyys('kokokone');
         }
     }
 }
+function paivitaVaunuNappienNakyvyys(nakyma) {
+    const btnYla = document.getElementById("btn-vaunut-yla");
+    const btnAla = document.getElementById("btn-vaunut-ala");
+    
+    if (!btnYla || !btnAla) return;
 
+    // Oletetaan, että nakyma-muuttuja on joko 'ylakone', 'alakone' tai 'kokokone'
+    if (nakyma === 'ylakone') {
+        btnYla.style.display = "flex";
+        btnAla.style.display = "none";
+    } else if (nakyma === 'alakone') {
+        btnYla.style.display = "none";
+        btnAla.style.display = "flex";
+    } else {
+        // Koko kone -näkymä (näytetään molemmat)
+        btnYla.style.display = "flex";
+        btnAla.style.display = "flex";
+    }
+}
 function vaihdaPeruskunnostusNakyma() {
     const nappi = document.getElementById("btnPeruskunnostetut");
     const filtteriValikko = document.getElementById("peruskunnostusFiltteri");
@@ -949,7 +978,7 @@ function luoPieniDraggableVikaKortti(vika) {
     // UUSI: Tarkistetaan onko päivä menneisyydessä
     const onMenneisyydessa = onkoPaivaMenneisyydessa(vika.suunniteltu_pvm);
     const hylsyOpacity = onMenneisyydessa ? "opacity: 0.4;" : "opacity: 1;";
-    const rastiTeksti = onMenneisyydessa ? ` <span style="color: #c0392b;">(Rästissä)</span>` : "";
+    const rastiTeksti = onMenneisyydessa ? ` <span style="color: #c0392b;">(Myöhässä)</span>` : "";
 
     return `
         <div style="background: ${tyyli.bg}; border-left: 4px solid ${tyyli.border}; padding: 6px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-size: 11px; margin-bottom: 2px; ${hylsyOpacity}" ${raahausAttr}>

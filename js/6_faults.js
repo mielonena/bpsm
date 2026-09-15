@@ -58,14 +58,17 @@ async function synkronoiLaitteenVikatila(id) {
         const vikaObj = {
             laite_id: id, prio: "keski", otsikko: ekaUusi.otsikko || "Määrittelemätön vika",
             sijainti: ekaUusi.sijainti || "-", kommentti: ekaUusi.osat || "-",
-            tyo_numero: ekaUusi.tyoNumero || "-", tyo_tyyppi: ekaUusi.tyoTyyppi || "Vika"
+            tyo_numero: ekaUusi.tyoNumero || "-", tyo_tyyppi: ekaUusi.tyoTyyppi || "Vika",
+            // Otetaan todellinen pvm suoraan huoltohistoriasta
+            tapahtuma_pvm: ekaUusi.pvm || "-"
         };
         const { error } = await supabaseclient.from('aktiiviset_viat').upsert(vikaObj);
         if (error) console.error("Virhe päivitettäessä aktiivista vikaa:", error);
 
         aktiivisetViat[id] = {
             prio: vikaObj.prio, otsikko: vikaObj.otsikko, sijainti: vikaObj.sijainti,
-            kommentti: vikaObj.kommentti, tyoNumero: vikaObj.tyo_numero, tyoTyyppi: vikaObj.tyo_tyyppi
+            kommentti: vikaObj.kommentti, tyoNumero: vikaObj.tyo_numero, tyoTyyppi: vikaObj.tyo_tyyppi,
+            tapahtuma_pvm: vikaObj.tapahtuma_pvm
         };
     } else {
         const { error } = await supabaseclient.from('aktiiviset_viat').delete().eq('laite_id', id);
@@ -142,6 +145,10 @@ async function vaihdaVikaTilaa() {
         
     } else {
         // --- UUDEN VIAN ILMOITTAMINEN ---
+        // Jos lomakkeella on pvm-kenttä, otetaan se. Muuten nykyinen päivä.
+        const tapahtumaKentta = document.getElementById("vikaTapahtumaPvm");
+        const valittuPvm = tapahtumaKentta && tapahtumaKentta.value ? tapahtumaKentta.value : new Date().toISOString().split('T')[0];
+
         const uusiVika = {
             laite_id: valittuKuljetinID, 
             prio: document.getElementById("vikaPrioriteetti").value,
@@ -149,7 +156,8 @@ async function vaihdaVikaTilaa() {
             sijainti: document.getElementById("vikaSijainti").value,
             kommentti: document.getElementById("vikaKommentti").value || "-",
             tyo_numero: "-", 
-            tyo_tyyppi: "Vika"
+            tyo_tyyppi: "Vika",
+            tapahtuma_pvm: valittuPvm
         };
         await supabaseclient.from('aktiiviset_viat').upsert(uusiVika);
         aktiivisetViat[valittuKuljetinID] = uusiVika;
@@ -259,6 +267,7 @@ function paivitaModalinVikaTila() {
         if(document.getElementById("vikaOtsikko")) document.getElementById("vikaOtsikko").value = "";
         if(document.getElementById("vikaSijainti")) document.getElementById("vikaSijainti").value = "Määrittelemätön";
         if(document.getElementById("vikaKommentti")) document.getElementById("vikaKommentti").value = "";
+        if(document.getElementById("vikaTapahtumaPvm")) document.getElementById("vikaTapahtumaPvm").value = new Date().toISOString().split('T')[0];
     }
 }
 
@@ -320,7 +329,7 @@ function paivitaVikaLista() {
 
     const prioArvot = { "korkea": 3, "keski": 2, "matala": 1 };
     
-    // 1. Suodatetaan datat normaalisti
+    // 1. Suodatetaan datat
     let viatArray = Object.entries(aktiivisetViat)
         .filter(([id, tila]) => tila)
         .filter(([id, tila]) => vikaFiltteri === "Kaikki" || id.includes(vikaFiltteri))
@@ -332,13 +341,13 @@ function paivitaVikaLista() {
             let tyoNumero = (typeof tila === "object" && tila.tyoNumero) ? tila.tyoNumero : "-"; 
             let tyoTyyppi = (typeof tila === "object" && tila.tyoTyyppi) ? tila.tyoTyyppi : "Vika";
             
-            // KORJAUS: Haetaan päivämäärä kentästä suunniteltu_pvm
             let suunniteltu_pvm = (typeof tila === "object" && tila.suunniteltu_pvm) ? tila.suunniteltu_pvm : "-";
+            let tapahtuma_pvm = (typeof tila === "object" && tila.tapahtuma_pvm) ? tila.tapahtuma_pvm : "-";
             
             otsikko = otsikko.replace(/\s*\([^)]*\)\s*$/, '');
             kommentti = kommentti.replace(/\s*\(Työ:\s*[^)]*\)\s*$/, '');
             
-            return { id, prio, otsikko, sijainti, kommentti, tyoNumero, tyoTyyppi, suunniteltu_pvm };
+            return { id, prio, otsikko, sijainti, kommentti, tyoNumero, tyoTyyppi, tapahtuma_pvm, suunniteltu_pvm };
         })
         .filter(item => {
             if (!vikaHakuTeksti) return true;
@@ -348,6 +357,7 @@ function paivitaVikaLista() {
                    item.prio.toLowerCase().includes(haku) ||
                    item.kommentti.toLowerCase().includes(haku) || 
                    item.sijainti.toLowerCase().includes(haku) ||
+                   item.tapahtuma_pvm.toLowerCase().includes(haku) ||
                    item.suunniteltu_pvm.toLowerCase().includes(haku) ||
                    item.tyoNumero.toLowerCase().includes(haku) || 
                    item.tyoTyyppi.toLowerCase().includes(haku);
@@ -365,7 +375,7 @@ function paivitaVikaLista() {
         ryhmitelty[ryhmaNimi].push(item);
     });
 
-    // 3. Järjestetään otsikot (Ryhmät) valinnan mukaan
+    // 3. Järjestetään otsikot
     let ryhmaAvaimet = Object.keys(ryhmitelty);
     if (vikaSorttaus === "kl_desc") {
         ryhmaAvaimet.sort((a, b) => b.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' }));
@@ -378,7 +388,6 @@ function paivitaVikaLista() {
         ryhmitelty[ryhma].sort((a, b) => {
             const tiedotA = erotteleLaiteTiedot(a.id);
             const tiedotB = erotteleLaiteTiedot(b.id);
-            
             if (vikaSorttaus === "prio") {
                 if (prioArvot[b.prio] !== prioArvot[a.prio]) return prioArvot[b.prio] - prioArvot[a.prio];
                 return tiedotA.nimi.localeCompare(tiedotB.nimi, undefined, { numeric: true, sensitivity: 'base' });
@@ -388,7 +397,7 @@ function paivitaVikaLista() {
         });
     });
 
-    // 5. Luodaan YKSI yhteinen HTML-taulukko
+    // 5. Luodaan yhteinen HTML-taulukko
     let html = "";
     if (ryhmaAvaimet.length === 0) {
         html += `<div style="background-color: #e8f8f5; border-left: 6px solid #2ecc71; padding: 20px; border-radius: 4px;">
@@ -400,15 +409,16 @@ function paivitaVikaLista() {
                     <thead>
                         <tr>
                             <th>Laite / Tunnus</th><th>Prioriteetti</th><th>Työnumero</th><th>Tyyppi</th>
-                            <th>Vian kuvaus</th><th>Sijainti laitteessa</th><th>Lisätiedot / Tarvittavat osat</th><th>Suunniteltu</th><th>Toiminnot</th>
+                            <th>Vian kuvaus</th><th>Sijainti laitteessa</th><th>Lisätiedot / Tarvittavat osat</th>
+                            <th>Havaittu / Työn pvm</th><th>Suunniteltu pvm</th><th>Toiminnot</th>
                         </tr>
                     </thead>
                     <tbody>`;
         
         ryhmaAvaimet.forEach(ryhma => {
-            // KORJAUS: colspan asetettu yhdeksään, jotta se vastaa sarakkeiden määrää
+            // Sarakemäärä kasvoi 10:een
             html += `<tr>
-                        <td colspan="9" style="background-color: #ecf0f1; color: #2c3e50; padding: 12px 15px; border-bottom: 2px solid #bdc3c7;">
+                        <td colspan="10" style="background-color: #ecf0f1; color: #2c3e50; padding: 12px 15px; border-bottom: 2px solid #bdc3c7;">
                             <h3 style="margin: 0; font-size: 16px;">📍 Linja / Ryhmä: ${ryhma}</h3>
                         </td>
                      </tr>`;
@@ -421,12 +431,27 @@ function paivitaVikaLista() {
                 const tiedot = erotteleLaiteTiedot(item.id);
                 const idTeksti = tiedot.nimi;
 
-                // Muotoillaan päivämäärä hienommaksi (YYYY-MM-DD -> DD.MM.YYYY), jos se on olemassa
-                let nayttoPvm = "-";
-                if (item.suunniteltu_pvm !== "-") {
-                    const osat = item.suunniteltu_pvm.split('-');
-                    if (osat.length === 3) nayttoPvm = `${osat[2]}.${osat[1]}.${osat[0]}`;
-                    else nayttoPvm = `${item.suunniteltu_pvm}`;
+                // Muotoillaan Todellinen/Havaittu PVM
+                let nayttoTapahtumaPvm = "-";
+                if (item.tapahtuma_pvm && item.tapahtuma_pvm !== "-") {
+                    if (item.tapahtuma_pvm.includes('-')) {
+                        const osat = item.tapahtuma_pvm.split('-');
+                        if (osat.length === 3) nayttoTapahtumaPvm = `${osat[2]}.${osat[1]}.${osat[0]}`;
+                    } else {
+                        nayttoTapahtumaPvm = item.tapahtuma_pvm;
+                    }
+                }
+
+                // Muotoillaan Suunniteltu PVM
+                let nayttoSuunniteltuPvm = "-";
+                if (item.suunniteltu_pvm && item.suunniteltu_pvm !== "-") {
+                    if (item.suunniteltu_pvm.includes('-')) {
+                        const osat = item.suunniteltu_pvm.split('-');
+                        if (osat.length === 3) nayttoSuunniteltuPvm = `🗓️ ${osat[2]}.${osat[1]}.${osat[0]}`;
+                        else nayttoSuunniteltuPvm = `🗓️ ${item.suunniteltu_pvm}`;
+                    } else {
+                        nayttoSuunniteltuPvm = `🗓️ ${item.suunniteltu_pvm}`;
+                    }
                 }
 
                 html += `<tr style="background-color: ${riviTausta}; font-weight: bold;">
@@ -437,7 +462,8 @@ function paivitaVikaLista() {
                             <td style="color: #c0392b;">${item.otsikko}</td>
                             <td>${item.sijainti}</td>
                             <td style="font-weight: normal; font-style: italic;">${item.kommentti}</td>
-                            <td style="color: #2ec700;">${nayttoPvm}</td>
+                            <td style="color: #8e44ad;">${nayttoTapahtumaPvm}</td>
+                            <td style="color: #2980b9;">${nayttoSuunniteltuPvm}</td>
                             <td><button onclick="avaaTiedot('${item.id}')" style="padding: 6px 12px; background-color: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">✏️ Avaa & Kuittaa</button></td>
                         </tr>`;
             });
