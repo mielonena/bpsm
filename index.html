@@ -516,6 +516,121 @@
             </g>
         </svg>
     </div>
+<!-- NAPIT KARTALLE -->
+<div id="vaunu-ohjausnapit" style="position: absolute; top: 220px; left: 240px; display: flex; gap: 15px; z-index: 10;">
+    <button id="btn-vaunut-yla" onclick="avaaVaunuIkkuna('Yläkone', 508)" style="padding: 10px 15px; background: #34495e; color: white; border: 2px solid #2c3e50; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        VAUNUT (Yläkone) <span id="yla-vaunu-badge" style="display: none; background: #e74c3c; color: white; padding: 2px 6px; border-radius: 10px; font-size: 12px;">0</span>
+    </button>
+    
+    <button id="btn-vaunut-ala" onclick="avaaVaunuIkkuna('Alakone', 493)" style="padding: 10px 15px; background: #34495e; color: white; border: 2px solid #2c3e50; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        VAUNUT (Alakone) <span id="ala-vaunu-badge" style="display: none; background: #e74c3c; color: white; padding: 2px 6px; border-radius: 10px; font-size: 12px;">0</span>
+    </button>
+</div>
+
+<!-- VAUNUJEN MODAL-IKKUNA (Piilotettu oletuksena) -->
+<div id="vaunuModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: #ecf0f1; width: 90%; max-width: 1200px; height: 85vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+        
+        <!-- Yläpalkki -->
+        <div style="background: #2c3e50; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="vaunuModalOtsikko" style="margin: 0; font-size: 22px;">Vaunujen hallinta</h2>
+            <button onclick="suljeVaunuIkkuna()" style="background: #e74c3c; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 4px; cursor: pointer;">SULJE ✖</button>
+        </div>
+
+        <!-- Sisältöalue (Jaettu kahtia: Kuva ja Lista) -->
+        <div style="display: flex; flex: 1; overflow: hidden;">
+            
+            <!-- VASEN: Räjäytyskuva -->
+            <div style="flex: 1; padding: 20px; background: #ffffff; border-right: 2px solid #bdc3c7; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow-y: auto;">
+                <h3 style="color: #34495e; margin-top: 0;">Vaunun räjäytyskuva</h3>
+                <img id="vaunuRajaytysKuva" src="https://hpwsekjtjdsyugjrswri.supabase.co/storage/v1/object/public/pics/vaunu.png" alt="Räjäytyskuva" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <p style="color: #7f8c8d; font-size: 13px; text-align: center; margin-top: 15px;">
+                    Merkitse oikealla olevasta listasta vaunut, joissa havaitset vikaa (esim. hihna ei pyöri). Valinta tallentuu automaattisesti.
+					<hr>
+<div style="width: 100%;">
+    
+    <!-- Kääre, joka tekee taulukosta vieritettävän -->
+    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #bdc3c7; border-radius: 6px; background: #ffffff; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead style="background: #34495e; color: white; position: sticky; top: 0; z-index: 1;">
+                <tr>
+                    <th style="padding: 8px 12px; font-weight: bold; border-bottom: 2px solid #2c3e50;">Varaosanumero</th>
+                    <th style="padding: 8px 12px; font-weight: bold; border-bottom: 2px solid #2c3e50;">Selite</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid #ecf0f1; background: #f8f9f9;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM603</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;">Sininen pyörä</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ecf0f1;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM604</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;">Pitkä koiranluu</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ecf0f1; background: #f8f9f9;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM604.1</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;"></td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ecf0f1;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM604.2</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;"></td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ecf0f1; background: #f8f9f9;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM604.3</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;"></td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ecf0f1;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM604.4</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;"></td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ecf0f1; background: #f8f9f9;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM604.5</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;"></td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ecf0f1;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM605</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;">Lyhyt koiranluu</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ecf0f1; background: #f8f9f9;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM608.6</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;">Nylonratas</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ecf0f1;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM608.7</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;">Messinkiholkki</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ecf0f1; background: #f8f9f9;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM608.8</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;">Muovilevy</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ecf0f1;">
+                    <td style="padding: 6px 12px; font-weight: bold; color: #2980b9;">BPM614</td>
+                    <td style="padding: 6px 12px; color: #2c3e50;">Hihna</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+                </p>
+            </div>
+
+            <!-- OIKEA: Vaunulista -->
+            <div style="flex: 1; padding: 20px; background: #f8f9f9; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: #34495e;">Vaunuluettelo</h3>
+                    <input type="text" id="vaunuHaku" placeholder="Hae numerolla..." oninput="suodataVaunut()" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+                </div>
+                
+                <!-- Tähän luodaan vaunut javascriptillä -->
+                <div id="vaunuListaContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+	
 <div id="kaapit-alue" style="display:none; width: 100%; overflow-x: auto; background-color: #f8f9f9; border-radius: 8px; border: 1px solid #bdc3c7; margin-top: 15px;">
         <svg id="sahkokeskukset-svg" width="100%" height="850" viewBox="-20 20 1650 850" style="min-width: 1200px;">
         </svg>
@@ -637,7 +752,8 @@
                                     <option value="-">Ei määritetty</option>
                                 </select>
                                 
-                                <input type="date" id="uusiPvm" required title="Päivämäärä">
+                                <input type="date" id="uusiPvm" required title="Työn avaamispäivämäärä" disabled>
+								<input type="date" id="vikaTapahtumaPvm" required title="Lopetuspäivä">
                                 <input type="text" id="uusiTyoNumero" placeholder="Työnumero (esim. TYO-123)" required>
                                 <select id="uusiSijainti">
                                     <option value="Määrittelemätön">Sijainti (Koko kuljetin)</option>
@@ -649,7 +765,7 @@
                                 <input type="text" id="uusiTekija" placeholder="Tekijän nimi/nimikirjaimet">
                                 <input type="text" id="uusiOtsikko" placeholder="Otsikko (esim. Laakerin vaihto)" required style="flex: 2;">
                                 <input type="text" id="uusiOsat" placeholder="Vaihdetut osat (valinnainen)">
-								<input type="date" id="vikaTapahtumaPvm">
+								
                             </div>
                             <div style="text-align: right; margin-top: 10px;">
                                 <button type="button" class="toiminto-nappi nappi-tallenna" onclick="tallennaUusiMerkinta(event)">💾 Tallenna</button>
