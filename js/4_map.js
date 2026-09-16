@@ -1308,30 +1308,31 @@ function generoiDIKaappiSVG(kaapinNimi) {
 // === VAUNUJEN VIKAHALLINTA (UUSI) ========= //
 // ========================================== //
 
-let tallennetutVaunuViat = {}; // Tallentaa koko vika-objektin: { hihna: true, ala: false... }
+let tallennetutVaunuViat = {}; 
+let nykyinenVaunuKone = "";
+let nykyinenVaunuMax = 0;
 
 // 1. Haetaan kaikki viat tietokannasta sivun latautuessa
 async function lataaVaunuViat() {
     try {
-        const { data, error } = await supabaseclient
-            .from('vaunu_viat')
-            .select('*');
-            
+        const { data, error } = await supabaseclient.from('vaunu_viat').select('*');
         if (error) throw error;
 
         tallennetutVaunuViat = {};
-        let ylaViatLkm = 0;
-        let alaViatLkm = 0;
+        let ylaViatLkm = 0; let alaViatLkm = 0;
 
         data.forEach(rivi => {
-            // Tarkistetaan, onko vaunussa MITÄÄN vikaa
-            const onkoVikaa = rivi.hihna_ei_pyori || rivi.nylon_ratas_ala || rivi.nylon_ratas_yla || rivi.kitkapyora;
+            const onkoVikaa = rivi.hihna_ei_pyori || rivi.nylon_ratas_ala || rivi.nylon_ratas_yla || 
+                              rivi.kitkapyora || rivi.hihna || rivi.koiranluu || rivi.sininen_pyora;
             
             tallennetutVaunuViat[rivi.vaunu_id] = {
                 hihna_ei_pyori: rivi.hihna_ei_pyori || false,
                 nylon_ratas_ala: rivi.nylon_ratas_ala || false,
                 nylon_ratas_yla: rivi.nylon_ratas_yla || false,
-                kitkapyora: rivi.kitkapyora || false
+                kitkapyora: rivi.kitkapyora || false,
+                hihna: rivi.hihna || false,
+                koiranluu: rivi.koiranluu || false,
+                sininen_pyora: rivi.sininen_pyora || false
             };
 
             if (onkoVikaa) {
@@ -1340,13 +1341,10 @@ async function lataaVaunuViat() {
             }
         });
 
-        // Päivitetään napin badge (ilmoitus viasta)
         paivitaVaunuBadge("yla-vaunu-badge", ylaViatLkm);
         paivitaVaunuBadge("ala-vaunu-badge", alaViatLkm);
 
-    } catch (err) {
-        console.error("Virhe vaunuvikojen latauksessa:", err);
-    }
+    } catch (err) { console.error("Virhe vaunuvikojen latauksessa:", err); }
 }
 
 function paivitaVaunuBadge(badgeId, lkm) {
@@ -1354,7 +1352,7 @@ function paivitaVaunuBadge(badgeId, lkm) {
     if (!badge) return;
     if (lkm > 0) {
         badge.style.display = "inline-block";
-        badge.innerText = `🚨 ${lkm} viallista`;
+        badge.innerText = `${lkm} viallista`;
     } else {
         badge.style.display = "none";
     }
@@ -1362,6 +1360,9 @@ function paivitaVaunuBadge(badgeId, lkm) {
 
 // 2. Ikkunan avaaminen ja listan generointi
 function avaaVaunuIkkuna(kone, maxVaunut) {
+    nykyinenVaunuKone = kone;
+    nykyinenVaunuMax = maxVaunut;
+
     document.getElementById('vaunuModal').style.display = "flex";
     document.getElementById('vaunuModalOtsikko').innerText = `Vaunujen hallinta: ${kone} (1 - ${maxVaunut})`;
     document.getElementById('vaunuHaku').value = ""; 
@@ -1369,126 +1370,188 @@ function avaaVaunuIkkuna(kone, maxVaunut) {
     const container = document.getElementById('vaunuListaContainer');
     let html = "";
 
+    // Generoidaan KAIKKI rivit valmiiksi muokkaustilaan
     for (let i = 1; i <= maxVaunut; i++) {
         const vaunuId = `${kone}-${i}`;
-        const tila = tallennetutVaunuViat[vaunuId] || { hihna_ei_pyori: false, nylon_ratas_ala: false, nylon_ratas_yla: false, kitkapyora: false };
+        const tila = tallennetutVaunuViat[vaunuId] || { 
+            hihna_ei_pyori: false, nylon_ratas_ala: false, nylon_ratas_yla: false, 
+            kitkapyora: false, hihna: false, koiranluu: false, sininen_pyora: false 
+        };
         
-        const onkoMitaanVikaa = tila.hihna_ei_pyori || tila.nylon_ratas_ala || tila.nylon_ratas_yla || tila.kitkapyora;
+        const onkoMitaanVikaa = tila.hihna_ei_pyori || tila.nylon_ratas_ala || tila.nylon_ratas_yla || 
+                                tila.kitkapyora || tila.hihna || tila.koiranluu || tila.sininen_pyora;
+        
         const taustaColor = onkoMitaanVikaa ? "#fdedec" : "#ffffff";
         const borderLeft = onkoMitaanVikaa ? "4px solid #e74c3c" : "4px solid #bdc3c7";
         const disabloitu = kayttajaRooli === 'katsoja' ? 'disabled title="Vain katseluoikeus"' : '';
 
-        // Piirretään rivi neljällä checkboxilla
         html += `
             <div class="vaunu-rivi" data-nro="${i}" style="background: ${taustaColor}; border-left: ${borderLeft}; padding: 10px; border-radius: 4px; display: flex; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: 0.2s;">
                 <strong style="color: #2c3e50; font-size: 16px; width: 50px;">#${i}</strong>
-                
-                <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; font-weight: bold; color: #34495e;">
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                        <input type="checkbox" id="chk-hihna-${vaunuId}" ${tila.hihna_ei_pyori ? 'checked' : ''} ${disabloitu} 
-                               onchange="tallennaVaunuVika('${kone}', ${i}, 'hihna_ei_pyori', this.checked)"> Hihna ei pyöri
-                    </label>
-                    
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                        <input type="checkbox" id="chk-ala-${vaunuId}" ${tila.nylon_ratas_ala ? 'checked' : ''} ${disabloitu} 
-                               onchange="tallennaVaunuVika('${kone}', ${i}, 'nylon_ratas_ala', this.checked)"> Nylon ratas (ala)
-                    </label>
-
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                        <input type="checkbox" id="chk-yla-${vaunuId}" ${tila.nylon_ratas_yla ? 'checked' : ''} ${disabloitu} 
-                               onchange="tallennaVaunuVika('${kone}', ${i}, 'nylon_ratas_yla', this.checked)"> Nylon ratas (ylä)
-                    </label>
-
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                        <input type="checkbox" id="chk-kitka-${vaunuId}" ${tila.kitkapyora ? 'checked' : ''} ${disabloitu} 
-                               onchange="tallennaVaunuVika('${kone}', ${i}, 'kitkapyora', this.checked)"> Kitkapyörä
-                    </label>
+                <div style="flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 12px; font-weight: bold; color: #34495e;">
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="chk-hihna-jumissa-${vaunuId}" ${tila.hihna_ei_pyori ? 'checked' : ''} ${disabloitu} onchange="tallennaVaunuVika('${kone}', ${i}, 'hihna_ei_pyori', this.checked)"> Hihna ei pyöri</label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="chk-ala-${vaunuId}" ${tila.nylon_ratas_ala ? 'checked' : ''} ${disabloitu} onchange="tallennaVaunuVika('${kone}', ${i}, 'nylon_ratas_ala', this.checked)"> Nylon ratas (ala)</label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="chk-yla-${vaunuId}" ${tila.nylon_ratas_yla ? 'checked' : ''} ${disabloitu} onchange="tallennaVaunuVika('${kone}', ${i}, 'nylon_ratas_yla', this.checked)"> Nylon ratas (ylä)</label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="chk-kitka-${vaunuId}" ${tila.kitkapyora ? 'checked' : ''} ${disabloitu} onchange="tallennaVaunuVika('${kone}', ${i}, 'kitkapyora', this.checked)"> Kitkapyörä</label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="chk-hihna-${vaunuId}" ${tila.hihna ? 'checked' : ''} ${disabloitu} onchange="tallennaVaunuVika('${kone}', ${i}, 'hihna', this.checked)"> Hihna</label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="chk-koiranluu-${vaunuId}" ${tila.koiranluu ? 'checked' : ''} ${disabloitu} onchange="tallennaVaunuVika('${kone}', ${i}, 'koiranluu', this.checked)"> Koiranluu</label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="chk-sininen-${vaunuId}" ${tila.sininen_pyora ? 'checked' : ''} ${disabloitu} onchange="tallennaVaunuVika('${kone}', ${i}, 'sininen_pyora', this.checked)"> Sininen pyörä</label>
                 </div>
             </div>
         `;
     }
-    
     container.innerHTML = html;
+
+    // Piirretään yhteenveto ja tarkistetaan löytyikö vikoja
+    const onkoVikoja = paivitaVaunuYhteenveto();
+    const btnYhteenveto = document.getElementById("btnNakymaYhteenveto");
+
+    if (onkoVikoja) {
+        btnYhteenveto.style.display = "inline-block";
+        vaihdaVaunuNakyma('yhteenveto');
+    } else {
+        btnYhteenveto.style.display = "none";
+        vaihdaVaunuNakyma('kaikki');
+    }
+}
+
+// 3. NÄKYMÄN VAIHTO (Yhteenveto <--> Kaikki)
+function vaihdaVaunuNakyma(nakyma) {
+    const btnYhteenveto = document.getElementById("btnNakymaYhteenveto");
+    const btnKaikki = document.getElementById("btnNakymaKaikki");
+    const containerYhteenveto = document.getElementById("vaunuYhteenvetoContainer");
+    const containerKaikki = document.getElementById("vaunuListaContainer");
+    const haku = document.getElementById("vaunuHaku");
+
+    if (nakyma === 'yhteenveto') {
+        btnYhteenveto.style.background = "#e74c3c"; btnYhteenveto.style.color = "white"; btnYhteenveto.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+        btnKaikki.style.background = "#bdc3c7"; btnKaikki.style.color = "#2c3e50"; btnKaikki.style.boxShadow = "none";
+        containerYhteenveto.style.display = "flex";
+        containerKaikki.style.display = "none";
+        haku.style.display = "none";
+    } else {
+        btnKaikki.style.background = "#3498db"; btnKaikki.style.color = "white"; btnKaikki.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+        btnYhteenveto.style.background = "#bdc3c7"; btnYhteenveto.style.color = "#2c3e50"; btnYhteenveto.style.boxShadow = "none";
+        containerYhteenveto.style.display = "none";
+        containerKaikki.style.display = "flex";
+        haku.style.display = "block";
+    }
+}
+
+// 4. TIIVIS YHTEENVETOKORTTIEN PIIRTÄMINEN
+function paivitaVaunuYhteenveto() {
+    const container = document.getElementById("vaunuYhteenvetoContainer");
+    let html = "";
+    let viallisiaLöytyi = false;
+
+    // Tiiviimmät tagit (pienempi fontti ja padding)
+    const luoTagi = (teksti, vari) => `<span style="background: ${vari}; color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; white-space: nowrap;">${teksti}</span>`;
+
+    for (let i = 1; i <= nykyinenVaunuMax; i++) {
+        const vaunuId = `${nykyinenVaunuKone}-${i}`;
+        const tila = tallennetutVaunuViat[vaunuId];
+        
+        if (tila && (tila.hihna_ei_pyori || tila.nylon_ratas_ala || tila.nylon_ratas_yla || tila.kitkapyora || tila.hihna || tila.koiranluu || tila.sininen_pyora)) {
+            viallisiaLöytyi = true;
+            let tagit = "";
+            
+            if(tila.hihna_ei_pyori) tagit += luoTagi("Hihna ei pyöri", "#c0392b");
+            if(tila.hihna) tagit += luoTagi("Hihna", "#e67e22");
+            if(tila.nylon_ratas_ala) tagit += luoTagi("Nylon (ala)", "#2980b9");
+            if(tila.nylon_ratas_yla) tagit += luoTagi("Nylon (ylä)", "#3498db");
+            if(tila.kitkapyora) tagit += luoTagi("Kitkapyörä", "#8e44ad");
+            if(tila.koiranluu) tagit += luoTagi("Koiranluu", "#f39c12");
+            if(tila.sininen_pyora) tagit += luoTagi("Sininen pyörä", "#16a085");
+
+            // Kortin design on nyt tiivis (pienemmät välit, 3 korttia rinnakkain)
+            html += `
+                <div style="background: #ffffff; border-left: 4px solid #e74c3c; border-radius: 4px; padding: 6px 8px; width: calc(33.333% - 7px); box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 4px;">
+                    <div style="color: #2c3e50; font-size: 12px; font-weight: bold; border-bottom: 1px solid #ecf0f1; padding-bottom: 2px;">Vaunu #${i}</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 3px;">
+                        ${tagit}
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    container.innerHTML = html;
+    return viallisiaLöytyi; // Palauttaa tiedon, oliko vikoja
 }
 
 function suljeVaunuIkkuna() {
     document.getElementById('vaunuModal').style.display = "none";
 }
 
-// 3. Hakutoiminto modaalissa
 function suodataVaunut() {
     const haku = document.getElementById('vaunuHaku').value;
     const rivit = document.querySelectorAll('.vaunu-rivi');
-    
     rivit.forEach(rivi => {
         const nro = rivi.getAttribute('data-nro');
-        if (nro.includes(haku)) {
-            rivi.style.display = "flex";
-        } else {
-            rivi.style.display = "none";
-        }
+        if (nro.includes(haku)) { rivi.style.display = "flex"; } else { rivi.style.display = "none"; }
     });
 }
 
-// 4. Tallennus tietokantaan (Nyt tukee mitä tahansa saraketta)
+// 5. Tallennus tietokantaan
 async function tallennaVaunuVika(kone, numero, kentta, onkoVika) {
-    if (kayttajaRooli === 'katsoja') {
-        alert("Vain luku -oikeus.");
-        return;
-    }
-
+    if (kayttajaRooli === 'katsoja') { alert("Vain luku -oikeus."); return; }
     const vaunuId = `${kone}-${numero}`;
     
-    // Luetaan vanha tila tai luodaan uusi
     let nykyinenTila = tallennetutVaunuViat[vaunuId] || {
-        hihna_ei_pyori: false,
-        nylon_ratas_ala: false,
-        nylon_ratas_yla: false,
-        kitkapyora: false
+        hihna_ei_pyori: false, nylon_ratas_ala: false, nylon_ratas_yla: false,
+        kitkapyora: false, hihna: false, koiranluu: false, sininen_pyora: false
     };
 
-    // Päivitetään vain se arvo, jota käyttäjä klikkasi
     nykyinenTila[kentta] = onkoVika;
 
     try {
-        const { error } = await supabaseclient
-            .from('vaunu_viat')
-            .upsert({
-                vaunu_id: vaunuId,
-                kone: kone,
-                numero: numero,
+        const { error } = await supabaseclient.from('vaunu_viat').upsert({
+                vaunu_id: vaunuId, kone: kone, numero: numero,
                 hihna_ei_pyori: nykyinenTila.hihna_ei_pyori,
                 nylon_ratas_ala: nykyinenTila.nylon_ratas_ala,
                 nylon_ratas_yla: nykyinenTila.nylon_ratas_yla,
-                kitkapyora: nykyinenTila.kitkapyora
+                kitkapyora: nykyinenTila.kitkapyora,
+                hihna: nykyinenTila.hihna,
+                koiranluu: nykyinenTila.koiranluu,
+                sininen_pyora: nykyinenTila.sininen_pyora
             });
 
         if (error) throw error;
-
-        // Tallennetaan muuttunut tila paikallisesti
         tallennetutVaunuViat[vaunuId] = nykyinenTila;
 
-        // Tarkistetaan, onko vaunussa enää YHTÄÄN vikaa
-        const onkoMitaanVikaa = nykyinenTila.hihna_ei_pyori || nykyinenTila.nylon_ratas_ala || nykyinenTila.nylon_ratas_yla || nykyinenTila.kitkapyora;
+        const onkoMitaanVikaa = nykyinenTila.hihna_ei_pyori || nykyinenTila.nylon_ratas_ala || 
+                                nykyinenTila.nylon_ratas_yla || nykyinenTila.kitkapyora || 
+                                nykyinenTila.hihna || nykyinenTila.koiranluu || nykyinenTila.sininen_pyora;
 
-        // Päivitetään rivin ulkoasu reaaliajassa
         const rivi = document.querySelector(`.vaunu-rivi[data-nro="${numero}"]`);
         if (onkoMitaanVikaa) {
-            rivi.style.background = "#fdedec";
-            rivi.style.borderLeft = "4px solid #e74c3c";
+            rivi.style.background = "#fdedec"; rivi.style.borderLeft = "4px solid #e74c3c";
         } else {
-            rivi.style.background = "#ffffff";
-            rivi.style.borderLeft = "4px solid #bdc3c7";
+            rivi.style.background = "#ffffff"; rivi.style.borderLeft = "4px solid #bdc3c7";
         }
 
-        // Haetaan viat uudelleen, jotta lukumäärä-badget nappuloissa pysyvät ajan tasalla
         lataaVaunuViat();
+        
+        // Päivitetään yhteenveto
+        const vikojaLoytyi = paivitaVaunuYhteenveto();
+        const btnYhteenveto = document.getElementById("btnNakymaYhteenveto");
+
+        // Älykäs välilehden piilotus:
+        // Jos otettiin viimeinen ruksi pois (ei enää vikoja ollenkaan)
+        if (!vikojaLoytyi) {
+            btnYhteenveto.style.display = "none";
+            // Jos käyttäjä oli "Yhteenveto"-näkymässä, heitetään hänet takaisin "Kaikki"-näkymään
+            if (document.getElementById("vaunuYhteenvetoContainer").style.display !== "none") {
+                vaihdaVaunuNakyma('kaikki');
+            }
+        } else {
+            // Jos vikoja on olemassa, pidetään nappi näkyvissä
+            btnYhteenveto.style.display = "inline-block";
+        }
 
     } catch (err) {
         console.error("Virhe vaunu-vian tallennuksessa:", err);
         alert("Virhe tallennuksessa! Tarkista tietokannan sarakkeet.");
-        
-        // Jos tallennus kaatuu, perutaan muutos käyttöliittymässä (ladataan modaali uudestaan)
         avaaVaunuIkkuna(kone, kone === 'Yläkone' ? 508 : 493);
     }
 }
