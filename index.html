@@ -616,16 +616,33 @@
                 </p>
             </div>
 
-            <!-- OIKEA: Vaunulista -->
-            <div style="flex: 1; padding: 20px; background: #f8f9f9; overflow-y: auto;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; color: #34495e;">Vaunuluettelo</h3>
-                    <input type="text" id="vaunuHaku" placeholder="Hae numerolla..." oninput="suodataVaunut()" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
-                </div>
-                
-                <!-- Tähän luodaan vaunut javascriptillä -->
-                <div id="vaunuListaContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
-            </div>
+            <!-- OIKEA: Vaunulista ja Yhteenveto -->
+<div style="flex: 1; padding: 20px; background: #f8f9f9; overflow-y: auto; display: flex; flex-direction: column;">
+    
+    <!-- Yläpalkki ja välilehdet -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;">
+        <div style="display: flex; gap: 10px;">
+            <button id="btnNakymaYhteenveto" onclick="vaihdaVaunuNakyma('yhteenveto')" style="padding: 8px 15px; background: #e74c3c; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                Vialliset
+            </button>
+            <button id="btnNakymaKaikki" onclick="vaihdaVaunuNakyma('kaikki')" style="padding: 8px 15px; background: #bdc3c7; color: #2c3e50; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s;">
+                Kaikki vaunut
+            </button>
+        </div>
+        <input type="text" id="vaunuHaku" placeholder="Hae numerolla..." oninput="suodataVaunut()" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; display: none;">
+    </div>
+    
+    <!-- NÄKYMÄ 1: Yhteenveto (Vialliset kortit) -->
+    <div id="vaunuYhteenvetoContainer" style="display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start;">
+        <!-- Javascript luo tähän kortit -->
+    </div>
+
+    <!-- NÄKYMÄ 2: Koko lista (Muokkaustila) -->
+    <div id="vaunuListaContainer" style="display: none; flex-direction: column; gap: 8px;">
+        <!-- Javascript luo tähän 500 riviä -->
+    </div>
+    
+</div>
 
         </div>
     </div>
@@ -723,7 +740,7 @@
 							
                         </div>
                         <button id="btnVikaToggle" class="toiminto-nappi" style="background-color: #e74c3c;" onclick="vaihdaVikaTilaa()">
-                            🚨 Ilmoita vika
+                            Ilmoita vika
                         </button>
                     </div>
 
