@@ -116,7 +116,9 @@
     .vika-pallo:hover {
         r: 13; /* Kasvaa isommaksi */
     }
-
+.kaarre-vika-ilmoitus {
+    stroke: #e74c3c !important; /* Kiinteä, huomiota herättävä punainen väri */
+}
     /* --- SIVUNÄKYMÄKONTAINERIT (LISTAT JA VIAT) --- */
     .lista-nakyma-container {
         display: none;

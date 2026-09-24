@@ -474,7 +474,7 @@
                 <line x1="-190" y1="1021" x2="-190" y2="731" class="rata-osa ala-osa" data-nimi="Alataso - Alavasen pystysuora" onclick="avaaTiedot('Alataso - Alavasen pystysuora')" />
                 <line x1="930" y1="671" x2="930" y2="481" class="rata-osa ala-osa" data-nimi="Alataso - Keskipystysuora" onclick="avaaTiedot('Alataso - Keskipystysuora')" />
                 <line x1="-190" y1="421" x2="-190" y2="131" class="rata-osa ala-osa" data-nimi="Alataso - Ylävasen pystysuora" onclick="avaaTiedot('Alataso - Ylävasen pystysuora')" />
-                <path d="M 1200 101 A 30 30 0 0 1 1230 131" class="rata-osa ala-osa" data-nimi="Kaarre 1 - 32301" onclick="avaaTiedot('Kaarre 1')" />
+                <path d="M 1200 101 A 30 30 0 0 1 1230 131" class="rata-osa ala-osa" data-nimi="Kaarre 1 - 32301" onclick="avaaTiedot('Alakone - Kaarre 1')" />
                 <path d="M 1230 1021 A 30 30 0 0 1 1200 1051" class="rata-osa ala-osa" data-nimi="Kaarre 2 - 32302" onclick="avaaTiedot('Alakone - Kaarre 2')" />
                 <path d="M -160 1051 A 30 30 0 0 1 -190 1021" class="rata-osa ala-osa" data-nimi="Kaarre 3 - 32303" onclick="avaaTiedot('Alakone - Kaarre 3')" />
                 <path d="M -190 131 A 30 30 0 0 1 -160 101" class="rata-osa ala-osa" data-nimi="Kaarre 8 - 32308" onclick="avaaTiedot('Alakone - Kaarre 8')" />
@@ -845,6 +845,66 @@
             </button>
         </div>
 
+    </div>
+</div>
+<!-- KAARTEEN OMA HALLINTAIKKUNA -->
+<div id="kaarreModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: #ecf0f1; width: 90%; max-width: 1000px; height: 80vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        
+        <!-- Yläpalkki -->
+        <div style="background: #2980b9; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="kaarreModalOtsikko" style="margin: 0; font-size: 22px;">Kaarteen hallinta</h2>
+            <button onclick="suljeKaarreIkkuna()" style="background: #c0392b; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 4px; cursor: pointer;">SULJE ✖</button>
+        </div>
+
+        <div style="display: flex; flex: 1; overflow: hidden;">
+            
+            <!-- VASEN: Visuaalinen 90-asteen kaarre ja 17 pyörää -->
+            <div style="flex: 2; padding: 30px; background: #ffffff; border-right: 2px solid #bdc3c7; display: flex; flex-direction: column; align-items: center;">
+                <h3 style="color: #34495e; margin-top: 0;">Visuaalinen sijainti</h3>
+                <p style="color: #7f8c8d; font-size: 13px; text-align: center; margin-bottom: 20px;">Klikkaa pyörää nähdäksesi sen historian tai ilmoittaaksesi vian.</p>
+                
+                <!-- Tähän piirretään 17 pyörää JavaScriptillä -->
+                <div id="kaarreSvgAlue" style="width: 100%; max-width: 400px; aspect-ratio: 1/1; position: relative;"></div>
+            </div>
+
+            <!-- OIKEA: Yksittäisen pyörän tiedot -->
+            <div style="flex: 1; min-width: 350px; background: #f8f9f9; padding: 20px; display: flex; flex-direction: column; overflow-y: auto;">
+                
+                <div id="pyoraEiValittu" style="text-align: center; color: #95a5a6; margin-top: 50px;">
+                    <span style="font-size: 40px;">🖱</span><br>
+                    <b style="font-size: 16px;">Valitse pyörä vasemmalta</b>
+                </div>
+
+                <div id="pyoraTiedotAlue" style="display: none; flex-direction: column; height: 100%;">
+                    <h3 id="valittuPyoraOtsikko" style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; margin-top: 0;">Pyörä #1</h3>
+                    
+                    <!-- Vian ilmoitus -->
+                    <div style="background: #ffffff; padding: 15px; border-radius: 6px; border: 1px solid #bdc3c7; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #c0392b;">Vian ilmoitus</h4>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold; color: #34495e;">
+                            <input type="checkbox" id="chkKaarreVika" onchange="tallennaKaarreVika(this.checked)" style="width: 18px; height: 18px;"> 
+                            Pyörä on viallinen / jumissa
+                        </label>
+                    </div>
+
+                    <!-- Uuden huollon/vaihdon kirjaus -->
+                    <div style="background: #ffffff; padding: 15px; border-radius: 6px; border: 1px solid #bdc3c7; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #27ae60;">Kirjaa uusi vaihto</h4>
+                        <input type="date" id="kaarreUusiPvm" style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px;" title="Päivämäärä">
+                        <input type="text" id="kaarreUusiTekija" placeholder="Tekijä / Kommentti" style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <button onclick="lisaaKaarreHistoria()" style="width: 100%; padding: 8px; background: #27ae60; color: white; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">Tallenna vaihto</button>
+                    </div>
+
+                    <!-- Historia -->
+                    <h4 style="margin: 0 0 10px 0; color: #34495e;">Vaihtohistoria</h4>
+                    <div id="kaarreHistoriaLista" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                        <!-- JS generoi tähän historiakortit -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
 </div>
 </body>
