@@ -114,6 +114,11 @@ function paivitaKokoHistoriaNakyma() {
 }
 
 function avaaTiedot(id) {
+    // -- UUSI LISÄYS: Kaarteiden ohjaus omaan ikkunaan --
+    if (id && id.includes("Kaarre")) {
+        avaaKaarreIkkuna(id);
+        return; // Pysäytetään suoritus tähän, ettei vanha ikkuna aukea!
+    }
     valittuKuljetinID = id; 
     piilotaLisaysLomake(); 
     paivitaModalinVikaTila(); 
