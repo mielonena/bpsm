@@ -1555,3 +1555,321 @@ async function tallennaVaunuVika(kone, numero, kentta, onkoVika) {
         avaaVaunuIkkuna(kone, kone === 'Yläkone' ? 508 : 493);
     }
 }
+// ========================================== //
+// === KAARTEIDEN (17 PYÖRÄÄ) HALLINTA ====== //
+// ========================================== //
+
+let nykyinenKaarreId = "";
+let valittuKaarrePyora = 0;
+
+// Paikallinen muisti, joka päivitetään aina tietokannasta
+let kaarreViat = {}; 
+let kaarreHistoria = {}; 
+
+// MUUTETTU ASYNCIKSI
+async function avaaKaarreIkkuna(id) {
+    nykyinenKaarreId = id;
+    valittuKaarrePyora = 0;
+
+    document.getElementById("kaarreModalOtsikko").innerText = `Laitteen tiedot: ${id}`;
+    document.getElementById("kaarreModal").style.display = "flex";
+    
+    // Piilotetaan oikea paneeli aluksi
+    document.getElementById("pyoraEiValittu").style.display = "block";
+    document.getElementById("pyoraTiedotAlue").style.display = "none";
+
+    // 1. Ladataan Supabasesta juuri tämän kaarteen tiedot
+    await lataaKaarreTiedot(id);
+
+    // 2. Piirretään pyörät vasta, kun tiedot on haettu!
+    piirraKaarrePyorat();
+}
+
+async function lataaKaarreTiedot(kaarreId) {
+    try {
+        // --- A. Haetaan vikastatukset ---
+        const { data: vikaData, error: vikaErr } = await supabaseclient
+            .from('kaarre_viat')
+            .select('*')
+            .eq('kaarre_id', kaarreId);
+            
+        if (vikaErr) throw vikaErr;
+
+        // Nollataan paikallinen muisti tälle kaarteelle
+        for (let i = 1; i <= 17; i++) {
+            kaarreViat[`${kaarreId}-${i}`] = false;
+        }
+        
+        // Asetetaan tietokannan tiedot
+        if (vikaData) {
+            vikaData.forEach(rivi => {
+                kaarreViat[`${kaarreId}-${rivi.pyora_nro}`] = rivi.onko_vikaa;
+            });
+        }
+
+        // --- B. Haetaan historia ---
+        const { data: histData, error: histErr } = await supabaseclient
+            .from('kaarre_historia')
+            .select('*')
+            .eq('kaarre_id', kaarreId)
+            .order('pvm', { ascending: false }); // Haetaan uusin ensin
+            
+        if (histErr) throw histErr;
+
+        // Nollataan historia
+        for (let i = 1; i <= 17; i++) {
+            kaarreHistoria[`${kaarreId}-${i}`] = [];
+        }
+        
+        if (histData) {
+            histData.forEach(rivi => {
+                kaarreHistoria[`${kaarreId}-${rivi.pyora_nro}`].push({
+                    pvm: rivi.pvm,
+                    tekija: rivi.tekija
+                });
+            });
+        }
+    } catch (err) {
+        console.error("Virhe kaarteen tietojen latauksessa:", err);
+    }
+}
+
+function suljeKaarreIkkuna() {
+    document.getElementById("kaarreModal").style.display = "none";
+}
+
+// Piirtää 17 pyörää SVG-muodossa 90 asteen kaarelle
+function piirraKaarrePyorat() {
+    const alue = document.getElementById("kaarreSvgAlue");
+    const svgNS = "http://www.w3.org/2000/svg";
+    
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("viewBox", "0 0 400 400");
+    svg.style.width = "100%";
+    svg.style.height = "100%";
+    svg.style.overflow = "visible";
+
+    const centerX = 50; const centerY = 50; const radius = 300; 
+
+    const runko = document.createElementNS(svgNS, "path");
+    runko.setAttribute("d", `M ${centerX + radius} ${centerY} A ${radius} ${radius} 0 0 1 ${centerX} ${centerY + radius}`);
+    runko.setAttribute("fill", "none");
+    runko.setAttribute("stroke", "#ecf0f1");
+    runko.setAttribute("stroke-width", "60");
+    svg.appendChild(runko);
+
+    for (let i = 0; i < 17; i++) {
+        const pyoraNro = i + 1;
+        const angle = (i / 16) * (Math.PI / 2);
+        const cx = centerX + radius * Math.cos(angle);
+        const cy = centerY + radius * Math.sin(angle);
+
+        // Katso onko muistissa vika-merkintä
+        const onkoVikaa = kaarreViat[`${nykyinenKaarreId}-${pyoraNro}`] === true;
+        const vari = onkoVikaa ? "#e74c3c" : "#3498db"; 
+
+        const pyora = document.createElementNS(svgNS, "circle");
+        pyora.setAttribute("cx", cx);
+        pyora.setAttribute("cy", cy);
+        pyora.setAttribute("r", "16");
+        pyora.setAttribute("fill", vari);
+        pyora.setAttribute("stroke", "#2c3e50");
+        pyora.setAttribute("stroke-width", "3");
+        pyora.setAttribute("class", "kaarre-pyora-ikoni");
+        pyora.style.cursor = "pointer";
+        pyora.style.transition = "0.2s";
+
+        const teksti = document.createElementNS(svgNS, "text");
+        teksti.setAttribute("x", cx);
+        teksti.setAttribute("y", cy + 5);
+        teksti.setAttribute("text-anchor", "middle");
+        teksti.setAttribute("fill", "white");
+        teksti.setAttribute("font-size", "14px");
+        teksti.setAttribute("font-weight", "bold");
+        teksti.style.pointerEvents = "none";
+        teksti.textContent = pyoraNro;
+
+        pyora.onmouseover = () => pyora.setAttribute("r", "20");
+        pyora.onmouseout = () => {
+            if (valittuKaarrePyora !== pyoraNro) pyora.setAttribute("r", "16");
+        };
+        pyora.onclick = () => valitseKaarrePyora(pyoraNro);
+
+        svg.appendChild(pyora);
+        svg.appendChild(teksti);
+    }
+
+    alue.innerHTML = "";
+    alue.appendChild(svg);
+    if (valittuKaarrePyora > 0) valitseKaarrePyora(valittuKaarrePyora);
+}
+
+// Käsittelee pyörän klikkaamisen
+function valitseKaarrePyora(pyoraNro) {
+    valittuKaarrePyora = pyoraNro;
+
+    const kaikkiPyorat = document.querySelectorAll(".kaarre-pyora-ikoni");
+    kaikkiPyorat.forEach((p, index) => {
+        if (index + 1 === pyoraNro) {
+            p.setAttribute("r", "22");
+            p.setAttribute("stroke", "#f1c40f"); 
+            p.setAttribute("stroke-width", "4");
+        } else {
+            p.setAttribute("r", "16");
+            p.setAttribute("stroke", "#2c3e50");
+            p.setAttribute("stroke-width", "3");
+        }
+    });
+
+    document.getElementById("pyoraEiValittu").style.display = "none";
+    document.getElementById("pyoraTiedotAlue").style.display = "flex";
+    document.getElementById("valittuPyoraOtsikko").innerText = `Pyörä #${pyoraNro}`;
+    
+    const vikaId = `${nykyinenKaarreId}-${pyoraNro}`;
+    const cbVika = document.getElementById("chkKaarreVika");
+    cbVika.checked = kaarreViat[vikaId] === true;
+    cbVika.disabled = (kayttajaRooli === 'katsoja'); // Ei anna katsojan raksia
+
+    document.getElementById("kaarreUusiPvm").value = new Date().toISOString().split('T')[0];
+    document.getElementById("kaarreUusiTekija").value = "";
+
+    paivitaKaarreHistoria();
+}
+
+// 1. SUPABASE TALLENNUS: Vikastatus
+async function tallennaKaarreVika(onkoVikaa) {
+    if (kayttajaRooli === 'katsoja') { alert("Vain luku -oikeus."); return; }
+    if (valittuKaarrePyora === 0) return;
+    
+    const vikaId = `${nykyinenKaarreId}-${valittuKaarrePyora}`;
+    
+    try {
+        const { error } = await supabaseclient
+            .from('kaarre_viat')
+            .upsert({
+                id: vikaId,
+                kaarre_id: nykyinenKaarreId,
+                pyora_nro: valittuKaarrePyora,
+                onko_vikaa: onkoVikaa
+            });
+
+        if (error) throw error;
+        
+        // Päivitetään paikallisesti ja piirretään uusiksi
+        kaarreViat[vikaId] = onkoVikaa;
+        piirraKaarrePyorat(); 
+        paivitaKartanKaarreViat();
+		
+    } catch (err) {
+        console.error("Virhe tallennettaessa kaarteen vikaa:", err);
+        alert("Tietokantavirhe!");
+        document.getElementById("chkKaarreVika").checked = !onkoVikaa; // Peruutetaan valinta ruudulta
+    }
+}
+
+// 2. SUPABASE TALLENNUS: Uusi historiakuittaus
+async function lisaaKaarreHistoria() {
+    if (kayttajaRooli === 'katsoja') { alert("Vain luku -oikeus."); return; }
+    if (valittuKaarrePyora === 0) return;
+    
+    const pvm = document.getElementById("kaarreUusiPvm").value;
+    const tekija = document.getElementById("kaarreUusiTekija").value;
+    
+    if (!pvm || !tekija) {
+        alert("Täytä päivämäärä ja tekijä/kommentti.");
+        return;
+    }
+
+    const vikaId = `${nykyinenKaarreId}-${valittuKaarrePyora}`;
+    
+    try {
+        // Tallennetaan uusi rivi
+        const { error } = await supabaseclient
+            .from('kaarre_historia')
+            .insert({
+                kaarre_id: nykyinenKaarreId,
+                pyora_nro: valittuKaarrePyora,
+                pvm: pvm,
+                tekija: tekija
+            });
+
+        if (error) throw error;
+
+        // Lisätään onnistumisen jälkeen näytölle
+        if (!kaarreHistoria[vikaId]) kaarreHistoria[vikaId] = [];
+        kaarreHistoria[vikaId].push({ pvm: pvm, tekija: tekija });
+        
+        document.getElementById("kaarreUusiTekija").value = "";
+        paivitaKaarreHistoria();
+
+        // ÄLYKÄS OMINAISUUS: Jos pyörä oli merkitty vialliseksi, poistetaan vika automaattisesti koska se on juuri huollettu!
+        if (kaarreViat[vikaId] === true) {
+            await tallennaKaarreVika(false);
+            document.getElementById("chkKaarreVika").checked = false;
+        }
+
+    } catch (err) {
+        console.error("Virhe historian tallennuksessa:", err);
+        alert("Virhe historian tallennuksessa.");
+    }
+}
+// Hakee kaikki vialliset kaarreet ja värjää ne kartalla
+async function paivitaKartanKaarreViat() {
+    try {
+        // Haetaan Supabasesta ne rivit, joissa pyörä on rikki
+        const { data, error } = await supabaseclient
+            .from('kaarre_viat')
+            .select('kaarre_id')
+            .eq('onko_vikaa', true);
+
+        if (error) throw error;
+
+        // Puhdistetaan ensin vanhat punaiset merkinnät pois kartalta
+        document.querySelectorAll('.kaarre-vika-ilmoitus').forEach(el => {
+            el.classList.remove('kaarre-vika-ilmoitus');
+        });
+
+        // Kerätään uniikit kaarteen ID:t, joissa on vikaa (esim. "Alakone - Kaarre 1")
+        const viallisetKaarreet = new Set(data.map(rivi => rivi.kaarre_id));
+
+        // Etsitään kartalta oikeat SVG-pathit ja lisätään niihin punainen vilkku -luokka
+        viallisetKaarreet.forEach(kaarreId => {
+            // Etsitään <path>, jonka onclick-attribuutista löytyy tämä ID
+            const path = document.querySelector(`path[onclick*="${kaarreId}"]`);
+            if (path) {
+                path.classList.add('kaarre-vika-ilmoitus');
+				
+            }
+        });
+
+    } catch (err) {
+        console.error("Virhe kaarrevikojen karttapäivityksessä:", err);
+    }
+}
+function paivitaKaarreHistoria() {
+    const alue = document.getElementById("kaarreHistoriaLista");
+    const vikaId = `${nykyinenKaarreId}-${valittuKaarrePyora}`;
+    const historia = kaarreHistoria[vikaId] || [];
+
+    if (historia.length === 0) {
+        alue.innerHTML = `<div style="color: #7f8c8d; font-style: italic; text-align: center; padding: 20px;">Ei aikaisempia vaihtoja.</div>`;
+        return;
+    }
+
+    const jarjestetty = [...historia].sort((a, b) => new Date(b.pvm) - new Date(a.pvm));
+
+    let html = "";
+    jarjestetty.forEach(h => {
+        const pvmOsat = h.pvm.split('-');
+        const nattiPvm = pvmOsat.length === 3 ? `${pvmOsat[2]}.${pvmOsat[1]}.${pvmOsat[0]}` : h.pvm;
+
+        html += `
+            <div style="background: #ffffff; padding: 10px; border-radius: 4px; border-left: 4px solid #3498db; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                <div style="font-weight: bold; color: #2c3e50; font-size: 13px;">${nattiPvm}</div>
+                <div style="color: #7f8c8d; font-size: 13px; margin-top: 4px;">${h.tekija}</div>
+            </div>
+        `;
+    });
+
+    alue.innerHTML = html;
+}
