@@ -95,7 +95,8 @@ function lataaAktiivisetViatExcel() {
     }
 
     let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
-    csvContent += "Laite / Tunnus;Ryhmä;Prioriteetti;Työnumero;Tyyppi;Vian kuvaus;Sijainti laitteessa;Lisätiedot\n";
+    // Lisätty "Suunniteltu pvm" otsikkoriville
+    csvContent += "Laite / Tunnus;Ryhmä;Prioriteetti;Työnumero;Tyyppi;Vian kuvaus;Sijainti laitteessa;Lisätiedot;Suunniteltu pvm\n";
 
     const viatArray = Object.entries(aktiivisetViat).filter(([id, tila]) => tila).map(([id, tila]) => {
         let prio = (tila === true) ? "korkea" : (typeof tila === "string" ? tila : tila.prio);
@@ -104,7 +105,11 @@ function lataaAktiivisetViatExcel() {
         let kommentti = (typeof tila === "object" && tila.kommentti) ? tila.kommentti : "-";
         let tyoNumero = (typeof tila === "object" && tila.tyoNumero) ? tila.tyoNumero : "-";
         let tyoTyyppi = (typeof tila === "object" && tila.tyoTyyppi) ? tila.tyoTyyppi : "Vika";
-        return { id, prio, otsikko, sijainti, kommentti, tyoNumero, tyoTyyppi };
+        
+        // Haetaan suunniteltu päivämäärä
+        let suunniteltu_pvm = (typeof tila === "object" && tila.suunniteltu_pvm) ? tila.suunniteltu_pvm : "-";
+        
+        return { id, prio, otsikko, sijainti, kommentti, tyoNumero, tyoTyyppi, suunniteltu_pvm };
     });
 
     if (viatArray.length === 0) { alert("Ei aktiivisia vikoja ladattavaksi."); return; }
@@ -121,7 +126,21 @@ function lataaAktiivisetViatExcel() {
         let otsikkoClean = item.otsikko.replace(/\s*\([^)]*\)\s*$/, '').replace(/;/g, ",").replace(/\n/g, " ");
         let sijaintiClean = item.sijainti.replace(/;/g, ",").replace(/\n/g, " ");
         let kommenttiClean = item.kommentti.replace(/\s*\(Työ:\s*[^)]*\)\s*$/, '').replace(/;/g, ",").replace(/\n/g, " ");
-        csvContent += `${tiedot.nimi};${tiedot.ryhma};${prioTeksti};${item.tyoNumero};${item.tyoTyyppi};${otsikkoClean};${sijaintiClean};${kommenttiClean}\n`;
+        
+        // Muotoillaan päivämäärä nätiksi Exceliin (esim. 2026-10-15 -> 15.10.2026)
+        let pvmClean = "-";
+        if (item.suunniteltu_pvm && item.suunniteltu_pvm !== "-") {
+            if (item.suunniteltu_pvm.includes('-')) {
+                const osat = item.suunniteltu_pvm.split('-');
+                if (osat.length === 3) pvmClean = `${osat[2]}.${osat[1]}.${osat[0]}`;
+                else pvmClean = item.suunniteltu_pvm;
+            } else {
+                pvmClean = item.suunniteltu_pvm;
+            }
+        }
+
+        // Lisätty pvmClean rivin loppuun
+        csvContent += `${tiedot.nimi};${tiedot.ryhma};${prioTeksti};${item.tyoNumero};${item.tyoTyyppi};${otsikkoClean};${sijaintiClean};${kommenttiClean};${pvmClean}\n`;
     });
 
     const tanaan = new Date();
@@ -131,7 +150,6 @@ function lataaAktiivisetViatExcel() {
     link.setAttribute("href", encodedUri); link.setAttribute("download", `aktiiviset_viat_${pvm}.csv`);
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
-
 function lataaExcel(lataaKaikki) {
     // ESTO: Katsojat eivät saa viedä dataa ohjelmasta ulos
     if (kayttajaRooli === 'katsoja') {
