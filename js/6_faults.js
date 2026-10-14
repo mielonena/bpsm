@@ -130,22 +130,42 @@ async function vaihdaVikaTilaa() {
     }
 
     if (aktiivisetViat[valittuKuljetinID]) {
-        // --- VIAN KUITTAUS (Muokkaustila) ---
-        const vanhaTila = aktiivisetViat[valittuKuljetinID];
-        let otsikko = typeof vanhaTila === "object" ? (vanhaTila.otsikko || "Vian korjaus") : "Vian korjaus";
-        let sijainti = typeof vanhaTila === "object" ? (vanhaTila.sijainti || "Määrittelemätön") : "Määrittelemätön";
-        let kommentti = typeof vanhaTila === "object" ? (vanhaTila.kommentti || "") : "";
+        // --- VIAN KUITTAUS ---
+        // 1. Tarkistetaan, löytyykö historiasta avoin "New" -merkintä tälle laitteelle
+        let vikaIndeksi = -1;
+        if (huoltoHistoria[valittuKuljetinID]) {
+            vikaIndeksi = huoltoHistoria[valittuKuljetinID].findIndex(t => t.status && t.status.toLowerCase() === "new");
+        }
 
-        naytaLisaysLomake();
-        
-        document.getElementById("uusiOtsikko").value = otsikko.replace(/\s*\([^)]*\)\s*$/, ''); 
-        document.getElementById("uusiSijainti").value = sijainti; 
-        if(document.getElementById("uusiOsat")) document.getElementById("uusiOsat").value = kommentti.replace(/\s*\(Työ:\s*[^)]*\)\s*$/, '');
-        if(document.getElementById("uusiStatus")) document.getElementById("uusiStatus").value = "Completed";
+        if (vikaIndeksi !== -1) {
+            // LÖYTYI KESKENERÄINEN: Avataan tämä olemassa oleva työ muokkaustilassa!
+            muokkaaMerkintaa(vikaIndeksi);
+            
+            // Vaihdetaan status suoraan "Completed" (Valmis)
+            const statusElem = document.getElementById("uusiStatus");
+            if (statusElem) statusElem.value = "Completed";
+            
+            // Rullataan näyttö nätisti lomakkeen kohdalle
+            document.getElementById("lisaysLomake").scrollIntoView({ behavior: 'smooth' });
+            
+        } else {
+            // POIKKEUSTILANNE: Vika on kartalla, mutta sillä ei jostain syystä ole historiamerkintää.
+            // Avataan silloin uusi lomake täytetyillä esitiedoilla.
+            const vanhaTila = aktiivisetViat[valittuKuljetinID];
+            let otsikko = typeof vanhaTila === "object" ? (vanhaTila.otsikko || "Vian korjaus") : "Vian korjaus";
+            let sijainti = typeof vanhaTila === "object" ? (vanhaTila.sijainti || "Määrittelemätön") : "Määrittelemätön";
+            let kommentti = typeof vanhaTila === "object" ? (vanhaTila.kommentti || "") : "";
+
+            naytaLisaysLomake();
+            
+            document.getElementById("uusiOtsikko").value = otsikko.replace(/\s*\([^)]*\)\s*$/, '');
+            document.getElementById("uusiSijainti").value = sijainti;
+            if(document.getElementById("uusiOsat")) document.getElementById("uusiOsat").value = kommentti.replace(/\s*\(Työ:\s*[^)]*\)\s*$/, '');
+            if(document.getElementById("uusiStatus")) document.getElementById("uusiStatus").value = "Completed";
+        }
         
     } else {
-        // --- UUDEN VIAN ILMOITTAMINEN ---
-        // Jos lomakkeella on pvm-kenttä, otetaan se. Muuten nykyinen päivä.
+        // --- UUDEN VIAN ILMOITTAMINEN (Pelkkä karttamerkintä) ---
         const tapahtumaKentta = document.getElementById("vikaTapahtumaPvm");
         const valittuPvm = tapahtumaKentta && tapahtumaKentta.value ? tapahtumaKentta.value : new Date().toISOString().split('T')[0];
 
@@ -159,8 +179,10 @@ async function vaihdaVikaTilaa() {
             tyo_tyyppi: "Vika",
             tapahtuma_pvm: valittuPvm
         };
+        
         await supabaseclient.from('aktiiviset_viat').upsert(uusiVika);
         aktiivisetViat[valittuKuljetinID] = uusiVika;
+        
         paivitaVikaKartta(); 
         paivitaModalinVikaTila(); 
         paivitaVikaLista();
