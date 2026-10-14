@@ -583,15 +583,13 @@ function muotoileTietokantaPvm(d) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-// UUSI APUFUNKTIO: Tarkistaa onko annettu pvm menneisyydessä (verrattuna kuluvaan päivään)
+// Apufunktio: Tarkistaa onko annettu pvm menneisyydessä
 function onkoPaivaMenneisyydessa(pvmStr) {
     if (!pvmStr) return false;
     const tanaan = new Date();
-    tanaan.setHours(0, 0, 0, 0); // Nollataan kellonajat tarkkaa vertailua varten
-    
+    tanaan.setHours(0, 0, 0, 0); 
     const kohdePvm = new Date(pvmStr);
     kohdePvm.setHours(0, 0, 0, 0);
-    
     return kohdePvm < tanaan;
 }
 
@@ -604,9 +602,12 @@ function laskeKestoTunteina(arvioStr) {
     return num; 
 }
 
-// Drag & Drop -funktiot
+// --- Drag & Drop -funktiot (Lukittu vain admineille) ---
 function raahausAlkoi(event, id) {
-    if (kayttajaRooli === 'katsoja') return;
+    if (kayttajaRooli !== 'admin') {
+        event.preventDefault(); // Estää raahauksen täysin, jos yrittää ohittaa
+        return;
+    }
     event.dataTransfer.setData("text/plain", id);
     event.target.style.opacity = "0.5"; 
 }
@@ -616,13 +617,13 @@ function raahausPaattyi(event) {
 }
 
 function salliPudotus(event) {
-    if (kayttajaRooli === 'katsoja') return;
+    if (kayttajaRooli !== 'admin') return;
     event.preventDefault(); 
     event.dataTransfer.dropEffect = "move";
 }
 
 function korostaPudotusAlue(event, aktiivinen) {
-    if (kayttajaRooli === 'katsoja') return;
+    if (kayttajaRooli !== 'admin') return;
     const element = event.currentTarget;
     if (aktiivinen) {
         element.style.backgroundColor = "#e8f8f5";
@@ -634,7 +635,10 @@ function korostaPudotusAlue(event, aktiivinen) {
 }
 
 async function pudotaKalenteriin(event, pvmStr) {
-    if (kayttajaRooli === 'katsoja') return;
+    if (kayttajaRooli !== 'admin') {
+        alert("🔒 Vain Admin voi muokata aikatauluja.");
+        return;
+    }
     event.preventDefault();
     korostaPudotusAlue(event, false);
     
@@ -643,13 +647,17 @@ async function pudotaKalenteriin(event, pvmStr) {
 }
 
 async function pudotaBacklogiin(event) {
-    if (kayttajaRooli === 'katsoja') return;
+    if (kayttajaRooli !== 'admin') {
+        alert("🔒 Vain Admin voi muokata aikatauluja.");
+        return;
+    }
     event.preventDefault();
     korostaPudotusAlue(event, false);
     
     const laiteId = event.dataTransfer.getData("text/plain");
     if (laiteId) await poistaSuunniteltuAika(laiteId);
 }
+// ----------------------------------------------------
 
 function laskeVaraosaYhteenveto(suunnittelemattomat, aikataulutetutTalleKuulle) {
     const osatYhteensa = {};
@@ -693,6 +701,12 @@ function generoiSuunnitteluNakyma() {
     const alue = document.getElementById("suunnittelu-alue");
     if (!alue) return;
 
+    // Tarkistetaan heti aluksi rooli - Jos ei admin, tulostetaan varoitus yläreunaan
+    const adminVaroitusHTML = kayttajaRooli !== 'admin' ? 
+        `<div style="background-color: #fcf3cf; color: #b9770e; padding: 10px; border: 1px solid #f1c40f; border-radius: 4px; margin-bottom: 15px;">
+            <strong>🔒 Vain luku -tila:</strong> Olet kirjautunut sisään asentajana tai katsojana. Vain Admin voi muokata aikatauluja ja arvioita.
+        </div>` : '';
+
     let suunnittelemattomat = [];
     let aikataulutetut = {};
 
@@ -717,6 +731,7 @@ function generoiSuunnitteluNakyma() {
     });
 
     let html = `
+        ${adminVaroitusHTML}
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h2 style='color: #2980b9; margin: 0;'>Huoltojen suunnittelu 🗓️</h2>
             <div style="display: flex; gap: 10px; background: #ecf0f1; padding: 5px; border-radius: 6px;">
@@ -750,9 +765,7 @@ function generoiSuunnitteluNakyma() {
         const osumat = suunnitteluHakuTeksti ? suunnittelemattomat.filter(v => (v.id + " " + v.otsikko).toLowerCase().includes(suunnitteluHakuTeksti)).length : suunnittelemattomat.length;
         const otsikkoLkm = suunnitteluHakuTeksti ? `(${osumat} / ${suunnittelemattomat.length})` : `(${suunnittelemattomat.length})`;
 
-        // ============================
         // VASEN: ODOTTAVAT TYÖT & HAKU
-        // ============================
         html += `
             <div style="flex: 1; min-width: 250px; max-width: 320px; background: #ecf0f1; padding: 15px; border-radius: 8px; border-top: 5px solid #e74c3c; height: 75vh; display: flex; flex-direction: column;">
                 
@@ -791,9 +804,7 @@ function generoiSuunnitteluNakyma() {
         }
         html += `</div></div></div>`; 
 
-        // ============================
         // OIKEA: KALENTERI
-        // ============================
         html += `
             <div style="flex: 3; min-width: 500px; background: #f8f9f9; padding: 15px; border-radius: 8px; border-top: 5px solid #27ae60;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 10px;">
@@ -845,9 +856,7 @@ function generoiSuunnitteluNakyma() {
         html += `</div></div>`; 
 
     } else {
-        // ================================================================= //
-        // === NÄKYMÄ 2: VUOSIKATSAUS (Koko ruutu) === //
-        // ================================================================= //
+        // NÄKYMÄ 2: VUOSIKATSAUS
         const vuosi = suunnitteluNykyinenPvm.getFullYear();
         
         html += `
@@ -859,7 +868,6 @@ function generoiSuunnitteluNakyma() {
                     </div>
                     <button onclick="vaihdaSuunnitteluVuosi(1)" style="padding: 8px 15px; background: #8e44ad; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Seuraava vuosi ▶</button>
                 </div>
-
                 <div style="display: flex; gap: 6px; flex: 1; overflow-x: auto; padding-bottom: 10px;">
         `;
 
@@ -891,14 +899,12 @@ function generoiSuunnitteluNakyma() {
             } else {
                 kkTyot.forEach(vika => {
                     kuukaudenTunnitYhteensa += laskeKestoTunteina(vika.kestoarvio);
-
                     const tyyli = getVikaTyyli(vika);
                     const pvmStr = `${vika.pvmObject.getDate()}.${vika.pvmObject.getMonth()+1}.`;
                     const vko = haeViikkonumero(vika.pvmObject);
                     const tiedot = erotteleLaiteTiedot(vika.id);
                     const kestoTieto = vika.kestoarvio ? ` | ⏱️ ${vika.kestoarvio} h` : "";
 
-                    // UUSI: Tarkistetaan onko työ vanhentunut (mennyt ohi nykyisestä päivästä)
                     const onMenneisyydessa = onkoPaivaMenneisyydessa(vika.pvmStr);
                     const hylsyOpacity = onMenneisyydessa ? "opacity: 0.4;" : "opacity: 1;";
                     const vanhentunutMerkinta = onMenneisyydessa ? ` <span style="color: #c0392b; font-weight: bold;">(Myöhässä)</span>` : "";
@@ -928,13 +934,10 @@ function generoiSuunnitteluNakyma() {
                     </div>
                 `;
             }
-            
             html += `</div>`; 
         }
-        
         html += `</div></div>`; 
     }
-
     html += `</div>`; 
     alue.innerHTML = html;
 }
@@ -942,8 +945,8 @@ function generoiSuunnitteluNakyma() {
 function luoDraggableVikaKortti(vika, displayStyle = "block") {
     const tiedot = erotteleLaiteTiedot(vika.id);
     const tyyli = getVikaTyyli(vika);
-    const raahausAttr = kayttajaRooli !== 'katsoja' ? `draggable="true" ondragstart="raahausAlkoi(event, '${vika.id}')" ondragend="raahausPaattyi(event)" style="cursor: grab;"` : '';
-    
+    // Vain admin saa raahata
+    const raahausAttr = kayttajaRooli === 'admin' ? `draggable="true" ondragstart="raahausAlkoi(event, '${vika.id}')" ondragend="raahausPaattyi(event)" style="cursor: grab;"` : '';
     const hakuData = `${vika.id} ${vika.otsikko}`.replace(/"/g, '&quot;');
     
     return `
@@ -961,24 +964,22 @@ function luoDraggableVikaKortti(vika, displayStyle = "block") {
             
             <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;" onmousedown="event.stopPropagation();">
                 <span style="font-size: 11px; color: #7f8c8d; font-weight: bold; width: 35px;">Kesto:</span>
-                <input type="text" value="${vika.kestoarvio || ''}" placeholder="0" onchange="tallennaSuunnitteluKentta('${vika.id}', 'kestoarvio', this.value)" style="width: 15px; padding: 2px 4px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px;" ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}><span style="font-size: 11px; color: #7f8c8d; font-weight: bold; width: 35px;">tuntia</span>
+                <input type="text" value="${vika.kestoarvio || ''}" placeholder="0" onchange="tallennaSuunnitteluKentta('${vika.id}', 'kestoarvio', this.value)" style="width: 15px; padding: 2px 4px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px;" ${kayttajaRooli !== 'admin' ? 'disabled title="Vain admin voi muokata"' : ''}><span style="font-size: 11px; color: #7f8c8d; font-weight: bold; width: 35px;">tuntia</span>
             </div>
 
             <div style="display: flex; align-items: center; gap: 6px;" onmousedown="event.stopPropagation();">
                 <span style="font-size: 11px; color: #7f8c8d; font-weight: bold; width: 35px;">Osat:</span>
-                <input type="text" value="${vika.varaosatarpeet || ''}" placeholder="BPM..." onchange="tallennaSuunnitteluKentta('${vika.id}', 'varaosatarpeet', this.value)" style="flex: 1; padding: 2px 4px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px;" ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}>
+                <input type="text" value="${vika.varaosatarpeet || ''}" placeholder="BPM..." onchange="tallennaSuunnitteluKentta('${vika.id}', 'varaosatarpeet', this.value)" style="flex: 1; padding: 2px 4px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px;" ${kayttajaRooli !== 'admin' ? 'disabled title="Vain admin voi muokata"' : ''}>
             </div>
         </div>
     `;
 }
 
-// Apufunktio: Pieni kortti kalenteriin (Nyt rästihimmennyksellä!)
 function luoPieniDraggableVikaKortti(vika) {
     const tiedot = erotteleLaiteTiedot(vika.id);
     const tyyli = getVikaTyyli(vika);
-    const raahausAttr = kayttajaRooli !== 'katsoja' ? `draggable="true" ondragstart="raahausAlkoi(event, '${vika.id}')" ondragend="raahausPaattyi(event)" style="cursor: grab;"` : '';
+    const raahausAttr = kayttajaRooli === 'admin' ? `draggable="true" ondragstart="raahausAlkoi(event, '${vika.id}')" ondragend="raahausPaattyi(event)" style="cursor: grab;"` : '';
     
-    // UUSI: Tarkistetaan onko päivä menneisyydessä
     const onMenneisyydessa = onkoPaivaMenneisyydessa(vika.suunniteltu_pvm);
     const hylsyOpacity = onMenneisyydessa ? "opacity: 0.4;" : "opacity: 1;";
     const rastiTeksti = onMenneisyydessa ? ` <span style="color: #c0392b;">(Myöhässä)</span>` : "";
@@ -996,51 +997,76 @@ function luoPieniDraggableVikaKortti(vika) {
 
             <div style="display: flex; gap: 4px;" onmousedown="event.stopPropagation();">
                 <input type="text" value="${vika.kestoarvio || ''}" 
-                       placeholder="2h"
-                       title="Kestoarvio"
+                       placeholder="2h" title="Kestoarvio"
                        onchange="tallennaSuunnitteluKentta('${vika.id}', 'kestoarvio', this.value)"
                        style="width: 15px; padding: 2px; font-size: 9px; border: 1px solid #ccc; border-radius: 2px; background: rgba(255,255,255,0.8);"
-                       ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}>
+                       ${kayttajaRooli !== 'admin' ? 'disabled title="Vain admin voi muokata"' : ''}>
                        
                 <input type="text" value="${vika.varaosatarpeet || ''}" 
-                       placeholder="Osat (Nimi:Määrä)"
-                       title="Varaosatarpeet"
+                       placeholder="Osat (Nimi:Määrä)" title="Varaosatarpeet"
                        onchange="tallennaSuunnitteluKentta('${vika.id}', 'varaosatarpeet', this.value)"
                        style="flex: 1; padding: 2px; font-size: 9px; border: 1px solid #ccc; border-radius: 2px; background: rgba(255,255,255,0.8);"
-                       ${kayttajaRooli === 'katsoja' ? 'disabled' : ''}>
+                       ${kayttajaRooli !== 'admin' ? 'disabled title="Vain admin voi muokata"' : ''}>
             </div>
         </div>
     `;
 }
 
-// Tietokantaan tallentamisen funktiot
+// Tietokantaan tallentamisen funktiot (Virheet näytetään suoraan käyttäjälle)
 async function tallennaSuunnitteluKentta(laiteId, kentta, uusiArvo) {
-    if (kayttajaRooli === 'katsoja') return;
+    if (kayttajaRooli !== 'admin') {
+        alert("🔒 Vain Admin voi muokata aikatauluja tai arvioita.");
+        generoiSuunnitteluNakyma(); // Palauttaa näkymän ennalleen, jos käyttäjä hakkeroi kentän auki
+        return;
+    }
     try {
         const updateObj = {}; updateObj[kentta] = uusiArvo;
         const { error } = await supabaseclient.from('aktiiviset_viat').update(updateObj).eq('laite_id', laiteId);
-        if (error) throw error;
+        
+        // Jos Supabasen Trigger iski vastaan, näytetään sen antama virheteksti!
+        if (error) {
+            console.error(error);
+            throw new Error("Tietokanta esti tallennuksen. Oletko varmasti Admin-käyttäjä?");
+        }
+        
         if (typeof aktiivisetViat[laiteId] === 'object') aktiivisetViat[laiteId][kentta] = uusiArvo;
         generoiSuunnitteluNakyma();
-    } catch (err) { console.error(`Virhe tallennettaessa kenttää ${kentta}:`, err); }
+    } catch (err) { 
+        alert(`❌ Virhe: ${err.message}`);
+        generoiSuunnitteluNakyma();
+    }
 }
 
 async function tallennaSuunniteltuAika(laiteId, uusiPvm) {
-    if (kayttajaRooli === 'katsoja') return;
+    if (kayttajaRooli !== 'admin') {
+        alert("🔒 Vain Admin voi muokata aikatauluja.");
+        return;
+    }
     try {
         const { error } = await supabaseclient.from('aktiiviset_viat').update({ suunniteltu_pvm: uusiPvm }).eq('laite_id', laiteId);
-        if (error) throw error;
+        if (error) throw new Error("Tietokanta esti tallennuksen. Oletko varmasti Admin-käyttäjä?");
+        
         if (typeof aktiivisetViat[laiteId] === 'object') aktiivisetViat[laiteId].suunniteltu_pvm = uusiPvm;
         generoiSuunnitteluNakyma();
-    } catch (err) { alert("Tallennus epäonnistui: " + err.message); }
+    } catch (err) { 
+        alert(`❌ Tallennus epäonnistui: ${err.message}`); 
+        generoiSuunnitteluNakyma();
+    }
 }
 
 async function poistaSuunniteltuAika(laiteId) {
-    if (kayttajaRooli === 'katsoja') return;
+    if (kayttajaRooli !== 'admin') {
+        alert("🔒 Vain Admin voi muokata aikatauluja.");
+        return;
+    }
     try {
         const { error } = await supabaseclient.from('aktiiviset_viat').update({ suunniteltu_pvm: null }).eq('laite_id', laiteId);
-        if (error) throw error;
+        if (error) throw new Error("Tietokanta esti poiston. Oletko varmasti Admin-käyttäjä?");
+        
         if (typeof aktiivisetViat[laiteId] === 'object') aktiivisetViat[laiteId].suunniteltu_pvm = null;
         generoiSuunnitteluNakyma();
-    } catch (err) { alert("Poisto epäonnistui: " + err.message); }
+    } catch (err) { 
+        alert(`❌ Poisto epäonnistui: ${err.message}`); 
+        generoiSuunnitteluNakyma();
+    }
 }
